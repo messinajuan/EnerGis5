@@ -1,0 +1,33 @@
+# This file should be included when you package your plugin.# Mandatory items:
+
+[general]
+name=EnerGis
+qgisMinimumVersion=3.0
+qgisMaximumVersion=3.99
+description=Manage EnerGis data
+version=5.0
+author=Juan Messina
+email=messinajuan@yahoo.com.ar
+
+about=The plugin allows to manage utilities networks.
+
+# End of mandatory metadata
+
+# Optional items:
+
+# Uncomment the following line and add your changelog:
+# changelog=3.0 code migration to QGIS3
+
+# Tags are comma separated with spaces allowed
+tags= layer, functions, change, snap, properties, editing, hide, context menu, context, menu, datasource, data source
+
+homepage=http://servimap.com.ar/
+tracker=https://github.com/jmessina/EnerGis/issues
+repository=https://github.com/jmessina/EnerGis/
+icon=energis.png
+# experimental flag
+experimental=True
+
+# deprecated flag (applies to the whole plugin, not just a single version)
+deprecated=False
+
