@@ -1,0 +1,22 @@
+<plugins>
+	<pyqgis_plugin name="EnerGis" version="5.0">
+	<description>
+		<![CDATA[ Manage EnerGis data ]]>
+	</description>
+	<version>5.0</version>
+	<qgis_minimum_version>3.22</qgis_minimum_version>
+	<homepage>http://servimap.com.ar/</homepage>
+	<file_name>EnerGis5.zip</file_name>
+	<icon>energis.ico</icon>
+	<author_name>Juan Messina</author_name>
+	<download_url>https://github.com//messinajuan/EnerGis5/release/EnerGis5.zip</download_url>
+	<uploaded_by>Juan Messina</uploaded_by>
+	<create_date>2023-01-01</create_date>
+	<update_date>2023-03-11</update_date>
+	<experimental>True</experimental>
+	<deprecated>False</deprecated>
+	<tracker>https://github.com/messinajuan/EnerGis5/</tracker>
+	<repository>https://github.com//messinajuan/EnerGis5/</repository>
+	<tags>metadata,postgresql,qgis,metadonnees</tags>
+	</pyqgis_plugin>
+</plugins>
