@@ -20,10 +20,10 @@ basepath = os.path.dirname(os.path.realpath(__file__))
 #39:aux2:elm                    7:aux2:
 #40:aux3:alimentador            8:aux3:
 #41:aux4:trafo                  9:aux4:
-#42:aux5:salida_anulada
 #43:aux6:nodo_padre            10:aux5:nodo_padre
 #44:aux7:seccionador           11:aux6:seccionador
 #45:aux8:marca_reducciones     12:aux7:marca_reducciones
+
 def __init__(self):
     self.lineas_del_nodo=[]
     self.proximos_nodos=[]
@@ -103,7 +103,6 @@ def navegar_compilar_red(self, mnodos, mlineas, monodos, fuente_navegada):
                         if mlineas[self.lineas_del_nodo[n]][11] == 0:
                             mlineas[self.lineas_del_nodo[n]][11] = seccionador
                         #aca no dejo pendientes porque se trata de una seccionador abierto
-
             #****************************************
             if mnodos[nodo][2]==3:
                 #como el ultimo nodo de cada spur
@@ -123,7 +122,6 @@ def navegar_compilar_red(self, mnodos, mlineas, monodos, fuente_navegada):
                     nodo_padre = mnodos[nodo][43]
                     seccionador = mnodos[nodo][44]
                     #repetir = True
-
             if repetir==False: #si repetir=True voy hasta el fondo para iterar
                 accion = 'Buscar lineas del nodo'
                 #****************************************
@@ -192,139 +190,137 @@ def navegar_compilar_red(self, mnodos, mlineas, monodos, fuente_navegada):
                 seccionador = nodo
         return 'Verificar Navegacion'
     except:
-        return 'Navegacion - Verificar nodo - en ' + accion + ': id = (' + str(nodo) + ') ' + str(mnodos[nodo][1])
+        return 'Navegacion - Verificar nodo - en ' + accion + ': ' + str(mnodos[nodo][1])
 
 def buscar_loops(self, mnodos, mlineas):
     #reduccion de matrices de nodos y lineas
-    mNnodos = mnodos
-    mNlineas = mlineas
     cant_spurs = 1
     while cant_spurs != 0:
         cant_spurs = 0
-        for n in range (0, len(mNnodos)):
+        for n in range (0, len(mnodos)):
             mnodos[n][45] = 1
-            if mNnodos[n][4]==0:
+            if mnodos[n][4]==0:
                 mnodos[n][45] = 0
-            if mNnodos[n][1]!=0 and (mNnodos[n][4]==1 or mNnodos[n][2]==3) and mNnodos[n][2]!=1:
+            if mnodos[n][1]!=0 and (mnodos[n][4]==1 or mnodos[n][2]==3) and mnodos[n][2]!=1:
                 cant_spurs = cant_spurs + 1
-                cant_lineas_del_nodo = buscar_lineas_segun_nodo(self, mNnodos, mNlineas, n)
+                cant_lineas_del_nodo = buscar_lineas_segun_nodo(self, mnodos, mlineas, n)
                 for i in range (0, cant_lineas_del_nodo):
                     id = self.lineas_del_nodo[i]
-                    pf = mNlineas[id][2]
-                    pt = mNlineas[id][3]
-                    mNlineas[id][1] = 0
-                    mNlineas[id][2] = 0
-                    mNlineas[id][3] = 0
-                    mNlineas[id][4] = 0
-                    mNlineas[id][5] = 0
-                    mNlineas[id][6] = 0
-                    mNlineas[id][12] = 0
-                    mNnodos[pf][4] = mNnodos[pf][4] - 1
+                    pf = mlineas[id][2]
+                    pt = mlineas[id][3]
+                    mlineas[id][1] = 0
+                    mlineas[id][2] = 0
+                    mlineas[id][3] = 0
+                    mlineas[id][4] = 0
+                    mlineas[id][5] = 0
+                    mlineas[id][6] = 0
+                    mlineas[id][12] = 0
+                    mnodos[pf][4] = mnodos[pf][4] - 1
                     for v in range (1, 32):
-                        if mNnodos[pf][4 + v] == id:
+                        if mnodos[pf][4 + v] == id:
                             for m in range (v, 31):
-                                mNnodos[pf][4 + m] = mNnodos[pf][4 + m + 1]
-                            mNnodos[pf][4 + 32] = 0
+                                mnodos[pf][4 + m] = mnodos[pf][4 + m + 1]
+                            mnodos[pf][4 + 32] = 0
                             v = 32
-                    mNnodos[pt][4] = mNnodos[pt][4] - 1
+                    mnodos[pt][4] = mnodos[pt][4] - 1
                     for v in range (1, 32):
-                        if mNnodos[pt][4 + v] == id:
+                        if mnodos[pt][4 + v] == id:
                             for m in range (v, 31):
-                                mNnodos[pt][4 + m] = mNnodos[pt][4 + m + 1]
-                            mNnodos[pt][4 + 32] = 0
+                                mnodos[pt][4 + m] = mnodos[pt][4 + m + 1]
+                            mnodos[pt][4 + 32] = 0
                             v = 32
-                mNnodos[n][1] = 0
+                mnodos[n][1] = 0
                 mnodos[n][45] = 0
 
-    for n in range (0, len(mNlineas)):
-        if mNlineas[n][1]!=0:
+    for n in range (0, len(mlineas)):
+        if mlineas[n][1]!=0:
             mlineas[n][12] = 1
     pass
 
 def navegar_a_las_fuentes(self, mnodos, mlineas, geoname):
     #reduccion de matrices de nodos y lineas
-    mNnodos = mnodos
-    mNlineas = mlineas
     cant_spurs = 1
     while cant_spurs != 0:
         cant_spurs = 0
-        for n in range (0, len(mNnodos)):
+        for n in range (0, len(mnodos)):
             mnodos[n][45] = 1
-            if mNnodos[n][4]==0:
+            if mnodos[n][4]==0:
                 mnodos[n][45] = 0
-            if mNnodos[n][1]!=0 and (mNnodos[n][4]==1 or mNnodos[n][2]==3) and mNnodos[n][2]!=1 and mNnodos[n][1]!=geoname:
+            if mnodos[n][1]!=0 and (mnodos[n][4]==1 or mnodos[n][2]==3) and mnodos[n][2]!=1 and mnodos[n][1]!=geoname:
                 cant_spurs = cant_spurs + 1
-                cant_lineas_del_nodo = buscar_lineas_segun_nodo(self, mNnodos, mNlineas, n)
+                cant_lineas_del_nodo = buscar_lineas_segun_nodo(self, mnodos, mlineas, n)
                 for i in range (0, cant_lineas_del_nodo):
-                    id = self.lineas_del_nodo[i]
-                    pf = mNlineas[id][2]
-                    pt = mNlineas[id][3]
-                    mNlineas[id][1] = 0
-                    mNlineas[id][12] = 0
-                    mNnodos[pf][4] = mNnodos[pf][4] - 1
+                    try:
+                        id = self.lineas_del_nodo[i]
+                    except:
+                        QMessageBox.information(None, "Mensaje", "Error en Nodo : " + str(mnodos[n][1]))
+                        return
+                    pf = mlineas[id][2]
+                    pt = mlineas[id][3]
+                    mlineas[id][1] = 0
+                    mlineas[id][12] = 0
+                    mnodos[pf][4] = mnodos[pf][4] - 1
                     for v in range (1, 32):
-                        if mNnodos[pf][4 + v] == id:
+                        if mnodos[pf][4 + v] == id:
                             for m in range (v, 31):
-                                mNnodos[pf][4 + m] = mNnodos[pf][4 + m + 1]
-                            mNnodos[pf][4 + 32] = 0
+                                mnodos[pf][4 + m] = mnodos[pf][4 + m + 1]
+                            mnodos[pf][4 + 32] = 0
                             v = 32
-                    mNnodos[pt][4] = mNnodos[pt][4] - 1
+                    mnodos[pt][4] = mnodos[pt][4] - 1
                     for v in range (1, 32):
-                        if mNnodos[pt][4 + v] == id:
+                        if mnodos[pt][4 + v] == id:
                             for m in range (v, 31):
-                                mNnodos[pt][4 + m] = mNnodos[pt][4 + m + 1]
-                            mNnodos[pt][4 + 32] = 0
+                                mnodos[pt][4 + m] = mnodos[pt][4 + m + 1]
+                            mnodos[pt][4 + 32] = 0
                             v = 32
-                mNnodos[n][1] = 0
+                mnodos[n][1] = 0
                 mnodos[n][45] = 0
-    for n in range (0, len(mNlineas)):
-        if mNlineas[n][1]!=0:
+    for n in range (0, len(mlineas)):
+        if mlineas[n][1]!=0:
             mlineas[n][12] = 1
     pass
 
 def navegar_a_nodo(self, mnodos, mlineas, desde, hasta):
     #reduccion de matrices de nodos y lineas
-    mNnodos = mnodos
-    mNlineas = mlineas
     cant_spurs = 1
     while cant_spurs != 0:
         cant_spurs = 0
-        for n in range (0, len(mNnodos)):
+        for n in range (0, len(mnodos)):
             mnodos[n][45] = 1
-            if mNnodos[n][4]==0:
+            if mnodos[n][4]==0:
                 mnodos[n][45] = 0
-            if mNnodos[n][1]!=0 and mNnodos[n][2]==3 and mNnodos[n][1]!=geoname:
+            if mnodos[n][1]!=0 and mnodos[n][2]==3 and mnodos[n][1]!=geoname:
                 cant_spurs = cant_spurs + 1
-                cant_lineas_del_nodo = buscar_lineas_segun_nodo(self, mNnodos, mNlineas, n)
+                cant_lineas_del_nodo = buscar_lineas_segun_nodo(self, mnodos, mlineas, n)
                 for i in range (0, cant_lineas_del_nodo):
                     id = self.lineas_del_nodo[i]
-                    pf = mNlineas[id][2]
-                    pt = mNlineas[id][3]
-                    mNlineas[id][1] = 0
-                    mNlineas[id][2] = 0
-                    mNlineas[id][3] = 0
-                    mNlineas[id][4] = 0
-                    mNlineas[id][5] = 0
-                    mNlineas[id][6] = 0
-                    mNlineas[id][12] = 0
-                    mNnodos[pf][4] = mNnodos[pf][4] - 1
+                    pf = mlineas[id][2]
+                    pt = mlineas[id][3]
+                    mlineas[id][1] = 0
+                    mlineas[id][2] = 0
+                    mlineas[id][3] = 0
+                    mlineas[id][4] = 0
+                    mlineas[id][5] = 0
+                    mlineas[id][6] = 0
+                    mlineas[id][12] = 0
+                    mnodos[pf][4] = mnodos[pf][4] - 1
                     for v in range (1, 32):
-                        if mNnodos[pf][4 + v] == id:
+                        if mnodos[pf][4 + v] == id:
                             for m in range (v, 31):
-                                mNnodos[pf][4 + m] = mNnodos[pf][4 + m + 1]
-                            mNnodos[pf][4 + 32] = 0
+                                mnodos[pf][4 + m] = mnodos[pf][4 + m + 1]
+                            mnodos[pf][4 + 32] = 0
                             v = 32
-                    mNnodos[pt][4] = mNnodos[pt][4] - 1
+                    mnodos[pt][4] = mnodos[pt][4] - 1
                     for v in range (1, 32):
-                        if mNnodos[pt][4 + v] == id:
+                        if mnodos[pt][4 + v] == id:
                             for m in range (v, 31):
-                                mNnodos[pt][4 + m] = mNnodos[pt][4 + m + 1]
-                            mNnodos[pt][4 + 32] = 0
+                                mnodos[pt][4 + m] = mnodos[pt][4 + m + 1]
+                            mnodos[pt][4 + 32] = 0
                             v = 32
-                mNnodos[n][1] = 0
+                mnodos[n][1] = 0
                 mnodos[n][45] = 0
-    for n in range (0, len(mNlineas)):
-        if mNlineas[n][1]!=0:
+    for n in range (0, len(mlineas)):
+        if mlineas[n][1]!=0:
             mlineas[n][12] = 1
     pass
 
@@ -354,10 +350,8 @@ def buscar_lineas_segun_nodo(self, mnodos, mlineas, nodo_buscado):
 def caida_tension(self, mnodos, mlineas, geoname):
     #reduccion de matrices de nodos y lineas
     nodos_asociados = [[]]
-    mNnodos = mnodos
-    mNlineas = mlineas
 
-    for n in range (0, len(mNnodos)):
+    for n in range (0, len(mnodos)):
         nodos_asociados.append([])
 
     cant_spurs = 1
@@ -368,29 +362,29 @@ def caida_tension(self, mnodos, mlineas, geoname):
         iteracion = iteracion + 1
         #QMessageBox.information(None, "Mensaje", "Iteracion: " + str(iteracion))
 
-        for n in range (0, len(mNnodos)):
+        for n in range (0, len(mnodos)):
             mnodos[n][45] = 1
-            if mNnodos[n][4]==0:
+            if mnodos[n][4]==0:
                 #si no tiene lineas
                 mnodos[n][45] = 0 #no navegado
 
-            if mNnodos[n][1]!=0 and (mNnodos[n][4]==1 or mNnodos[n][2]==3) and mNnodos[n][2]!=1 and mNnodos[n][1]!=geoname:
+            if mnodos[n][1]!=0 and (mnodos[n][4]==1 or mnodos[n][2]==3) and mnodos[n][2]!=1 and mnodos[n][1]!=geoname:
                 #si (geoname no es cero) y (tiene una sola linea o es un NA) y (no es fuente) y (no es el nodo inicial)
 
                 #el listado de asociaciones es el del nodo n
                 na = nodos_asociados[n]
-                if mNnodos[n][2]==6 or mNnodos[n][2]==4: #si es trafo o suministro
-                    na.append(mNnodos[n][1])
+                if mnodos[n][2]==6 or mnodos[n][2]==4: #si es trafo o suministro
+                    na.append(mnodos[n][1])
                     nodos_asociados[n] = na
 
                 #reduzco el nodo n al otro nodo de la línea
                 cant_spurs = cant_spurs + 1 #sumo uno solo para el while
-                cant_lineas_del_nodo = buscar_lineas_segun_nodo(self, mNnodos, mNlineas, n)
+                cant_lineas_del_nodo = buscar_lineas_segun_nodo(self, mnodos, mlineas, n)
                 for i in range (0, cant_lineas_del_nodo):
                     #pueden ser una o dos lineas si es nodo o NA
                     id = self.lineas_del_nodo[i]
-                    pf = mNlineas[id][2]
-                    pt = mNlineas[id][3]
+                    pf = mlineas[id][2]
+                    pt = mlineas[id][3]
 
                     #detecto proximos nodos asi les puedo pasar los nodos asociados
                     #al proximo nodo le transmito los asociados del actual
@@ -405,254 +399,200 @@ def caida_tension(self, mnodos, mlineas, geoname):
                             na.append(nodos_asociados[n][j])
                         nodos_asociados[pf] = na
                     else:
-                        QMessageBox.information(None, "Mensaje", "Error en línea : " + str(mNlineas[id][1]))
+                        QMessageBox.information(None, "Mensaje", "Error en línea : " + str(mlineas[id][1]))
 
                     #elimino la linea del spur
-                    mNlineas[id][1] = 0
-                    mNlineas[id][12] = 0
+                    mlineas[id][1] = 0
+                    mlineas[id][12] = 0
 
                     #le saco el proximo nodo al nodo desde de la linea
-                    mNnodos[pf][4] = mNnodos[pf][4] - 1
+                    mnodos[pf][4] = mnodos[pf][4] - 1
                     for v in range (1, 32):
-                        if mNnodos[pf][4 + v] == id:
+                        if mnodos[pf][4 + v] == id:
                             for m in range (v, 31):
-                                mNnodos[pf][4 + m] = mNnodos[pf][4 + m + 1]
-                            mNnodos[pf][4 + 32] = 0
+                                mnodos[pf][4 + m] = mnodos[pf][4 + m + 1]
+                            mnodos[pf][4 + 32] = 0
                             v = 32
 
                     #le saco el proximo nodo al nodo hasta de la linea
-                    mNnodos[pt][4] = mNnodos[pt][4] - 1
+                    mnodos[pt][4] = mnodos[pt][4] - 1
                     for v in range (1, 32):
-                        if mNnodos[pt][4 + v] == id:
+                        if mnodos[pt][4 + v] == id:
                             for m in range (v, 31):
-                                mNnodos[pt][4 + m] = mNnodos[pt][4 + m + 1]
-                            mNnodos[pt][4 + 32] = 0
+                                mnodos[pt][4 + m] = mnodos[pt][4 + m + 1]
+                            mnodos[pt][4 + 32] = 0
                             v = 32
                 #elimino el nodo
-                mNnodos[n][1] = 0
+                mnodos[n][1] = 0
                 mnodos[n][45] = 0
 
     #f = open(os.path.join(basepath,"salidas", 'salida_navegacion.txt'), 'w')
     #f.write('\n' + 'Nodo analizado = ' + str(geoname))
-    #for n in range (0, len(mNnodos)):
-    #    if mNnodos[n][1]!=0:
-    #        f.write('\n' + str(mNnodos[n][1]) + chr(9) + str(n) + chr(9) + str(nodos_asociados[n]))
+    #for n in range (0, len(mnodos)):
+    #    if mnodos[n][1]!=0:
+    #        f.write('\n' + str(mnodos[n][1]) + chr(9) + str(n) + chr(9) + str(nodos_asociados[n]))
     #f.close()
 
-    for n in range (0, len(mNlineas)):
-        if mNlineas[n][1]!=0:
+    for n in range (0, len(mlineas)):
+        if mlineas[n][1]!=0:
             mlineas[n][12] = 1
 
     #QMessageBox.information(None, "Mensaje", "Fin - Salida a txt")
     pass
 
 def nodos_por_seccionador(self, conn, mnodos, mlineas):
+    #ver en nodos_por_salida
     #reduccion de matrices de nodos y lineas
     nodos_asociados = [[]]
     nodos_geoname = []
-    mNnodos = mnodos
-    mNlineas = mlineas
-
-    for n in range (0, len(mNnodos)):
+    for n in range (0, len(mnodos)):
         nodos_asociados.append([])
-        nodos_geoname.append(mNnodos[n][1])
-
+        nodos_geoname.append(mnodos[n][1])
     cant_spurs = 1
+    #ver en nodos_por_salida
     while cant_spurs != 0:
         cant_spurs = 0
-
-        for n in range (0, len(mNnodos)):
+        for n in range (0, len(mnodos)):
             mnodos[n][45] = 1
-            if mNnodos[n][4]==0:
+            if mnodos[n][4]==0:
                 mnodos[n][45] = 0
-            if mNnodos[n][1]!=0 and (mNnodos[n][4]==1 or mNnodos[n][2]==3) and mNnodos[n][2]!=1:
-
-                #el listado de asociaciones es el del nodo n
-                na = nodos_asociados[n]
-                if mNnodos[n][2]==6 or mNnodos[n][2]==4: #si es trafo o suministro
-                    na.append(mNnodos[n][1])
-                    nodos_asociados[n] = na
-
-                cant_spurs = cant_spurs + 1
-                cant_lineas_del_nodo = buscar_lineas_segun_nodo(self, mNnodos, mNlineas, n)
-                for i in range (0, cant_lineas_del_nodo):
-                    id = self.lineas_del_nodo[i]
-                    pf = mNlineas[id][2]
-                    pt = mNlineas[id][3]
-
-                    #pueden ser una o dos lineas si es nodo o NA
-                    id = self.lineas_del_nodo[i]
-                    pf = mNlineas[id][2]
-                    pt = mNlineas[id][3]
-
-                    #detecto proximos nodos asi les puedo pasar los nodos asociados
-                    #al proximo nodo le transmito los asociados del actual
-                    if pf==n:
-                        na = nodos_asociados[pt]
-                        for j in range (0, len(nodos_asociados[n])):
-                            na.append(nodos_asociados[n][j])
-                        nodos_asociados[pt] = na
-                    elif pt==n:
-                        na = nodos_asociados[pf]
-                        for j in range (0, len(nodos_asociados[n])):
-                            na.append(nodos_asociados[n][j])
-                        nodos_asociados[pf] = na
-                    else:
-                        QMessageBox.information(None, "Mensaje", "Error en línea : " + str(mNlineas[id][1]))
-
-                    mNlineas[id][1] = 0
-                    mNlineas[id][2] = 0
-                    mNlineas[id][3] = 0
-                    mNlineas[id][4] = 0
-                    mNlineas[id][5] = 0
-                    mNlineas[id][6] = 0
-                    mNlineas[id][12] = 0
-                    mNnodos[pf][4] = mNnodos[pf][4] - 1
-                    for v in range (1, 32):
-                        if mNnodos[pf][4 + v] == id:
-                            for m in range (v, 31):
-                                mNnodos[pf][4 + m] = mNnodos[pf][4 + m + 1]
-                            mNnodos[pf][4 + 32] = 0
-                            v = 32
-                    mNnodos[pt][4] = mNnodos[pt][4] - 1
-                    for v in range (1, 32):
-                        if mNnodos[pt][4 + v] == id:
-                            for m in range (v, 31):
-                                mNnodos[pt][4 + m] = mNnodos[pt][4 + m + 1]
-                            mNnodos[pt][4 + 32] = 0
-                            v = 32
-                mNnodos[n][1] = 0
-                mnodos[n][45] = 0
-
-    #f = open(os.path.join(basepath,"salidas", 'nodos_seccionador.txt'), 'w')
-    #for n in range (0, len(mNnodos)):
-        #if mNnodos[n][2]==2:
-            #f.write('\n' + str(nodos_geoname[n]) + chr(9) + str(n) + chr(9) + str(nodos_asociados[n]))
-    #f.close()
-
-    cursor = conn.cursor()
-    cursor.execute("TRUNCATE TABLE nodos_seccionador")
-    for n in range (0, len(self.mnodos_secc)):
-        if self.mnodos_secc[n][39]==2:
-            cursor.execute("INSERT INTO nodos_seccionador (geoname, nodos) VALUES (" + str(nodos_geoname[n]) + ",'" + str(nodos_asociados[n]).replace('[','').replace(']','') + "')")
-    conn.commit()
-
-    for n in range (0, len(mNlineas)):
-        if mNlineas[n][1]!=0:
-            mlineas[n][12] = 1
-    pass
+            if mnodos[n][1]!=0 and (mnodos[n][4]==1 or mnodos[n][2]==3) and mnodos[n][2]!=1:
+                #ver en nodos_por_salida
+                pass
+    #cursor = conn.cursor()
+    #cursor.execute("TRUNCATE TABLE nodos_seccionador")
+    #for n in range (0, len(self.mnodos_secc)):
+    #    if self.mnodos_secc[n][39]==2:
+    #        cursor.execute("INSERT INTO nodos_seccionador (geoname, nodos) VALUES (" + str(nodos_geoname[n]) + ",'" + str(nodos_asociados[n]).replace('[','').replace(']','') + "')")
+    #conn.commit()
 
 def nodos_por_salida(self, conn, mnodos, mlineas):
     #reduccion de matrices de nodos y lineas
     nodos_asociados = [[]]
     nodos_geoname = []
-    mNnodos = mnodos
-    mNlineas = mlineas
-
-    for n in range (0, len(mNnodos)):
+    #armo un array vacio con una columna por nodo para alojar a los nodos asociados a cada uno
+    for n in range (0, len(mnodos)):
         nodos_asociados.append([])
-        nodos_geoname.append(mNnodos[n][1])
-
+        nodos_geoname.append(mnodos[n][1])
+    #vaciamos la tabla que guarda los nodos por alimentador (geoname, id)
     cursor = conn.cursor()
-    cursor.execute("TRUNCATE TABLE Nodos_Alimentador")
-    conn.commit()
-    f = open(os.path.join(basepath,"salidas", 'salidas_nodos.txt'), 'w')
-    f.write('\n' + 'salidas_nodos')
-    f.close()
-
+    try:
+        cursor.execute("TRUNCATE TABLE Nodos_Alimentador")
+        conn.commit()
+    except:
+        conn.rollback()
+    #f = open(os.path.join(basepath,"salidas", 'salidas_nodos.txt'), 'w')
+    #f.write('\n' + 'salidas_nodos')
+    #f.close()
     #Reduccion de Red por niveles de salidas de alimentador
     #Se utiliza el elemento y no el estado de los mismos
+    #Se recorre el array de nodos, se le va asignando geoname=0 para anularlos
+    #Con un máximo de 10 niveles se pretende encontrar los nodos por salida
     nivel = 1
+    #Arranque
     seguir = 1
+    #Se seguirá siempre y cuando queden salidas por recorrer
     while seguir == 1:
+        #Arranque
         cant_spurs = 1
+        #Se seguirá siempre y cuando existan spurs
         while cant_spurs != 0:
+            #Blanqueo cantidad de spurs
             cant_spurs = 0
-            for n in range (0, len(mNnodos)):
-                mnodos[n][45] = 1
-                if mNnodos[n][4]==0:
+            #Se recorre el array de nodos tratando de agrupar para este nivel todos los nodos hacia la salida
+            for n in range (0, len(mnodos)):
+                #si es aislado lo desmarco
+                if mnodos[n][4]==0:
                     mnodos[n][45] = 0
-                if mNnodos[n][1]!=0 and (mNnodos[n][4]==1 or mNnodos[n][39]==3) and mNnodos[n][2]!=1 and mNnodos[n][2]!=8:
+                else:
+                    #Marco el nodo que analizo en posicion 45
+                    mnodos[n][45] = 1
+                #Si no esta borrado y (es spur o es SA) y no es fuente
+                if mnodos[n][1]!=0 and (mnodos[n][4]==1 or mnodos[n][39]==3) and mnodos[n][2]!=1:
+                    #Si no es salida de alimentador:
+                    if mnodos[n][2]!=8:
+                        #sumo uno a la lista de spurs para continuar intentando reducir
+                        cant_spurs = cant_spurs + 1
+                        #El listado de asociaciones inicial es el que tenia el nodo al momento de consultarlo
+                        na = nodos_asociados[n]
+                        #Al listado de asociados que posee este nodo (que ahora es spur) le agrego este mismo
+                        na.append(mnodos[n][1])
+                        #Ahora el listado de asociados a este nodo es la lista total
+                        nodos_asociados[n] = na
+                        #Busco LA LINEA del nodo
+                        cant_lineas_del_nodo = buscar_lineas_segun_nodo(self, mnodos, mlineas, n)
+                        for i in range (0, cant_lineas_del_nodo):
+                            #Para cada una de las lineas del nodo, obtenemos desde y hasta
+                            id = self.lineas_del_nodo[i]
+                            pf = mlineas[id][2]
+                            pt = mlineas[id][3]
+                            #Detecto el próximo nodo asi le puedo pasar los nodos asociados del actual
+                            #Tienen que ser nodos aguas arriba, o sea que no tienen que estar marcados
+                            #Si el nodo desde es n, el proximo setá el hasta
+                            if pf==n:
+                                #El nodo a asocial es el hasta
+                                p = pt
+                            elif pt==n:
+                                #El nodo a asocial es el desde
+                                p = pf
+                            else: #Si no encuentro desde ni hasta hay un error
+                                QMessageBox.information(None, "Mensaje", "Error en línea : " + str(mlineas[id][1]))
 
-                    #el listado de asociaciones es el del nodo n
-                    na = nodos_asociados[n]
-                    na.append(mNnodos[n][1])
-                    nodos_asociados[n] = na
+                            if mnodos[p][0]!=0:
+                                na = nodos_asociados[p]
+                                for j in range (0, len(nodos_asociados[n])):
+                                    na.append(nodos_asociados[n][j])
+                                nodos_asociados[p] = na
 
-                    cant_spurs = cant_spurs + 1
-                    cant_lineas_del_nodo = buscar_lineas_segun_nodo(self, mNnodos, mNlineas, n)
-                    for i in range (0, cant_lineas_del_nodo):
-                        id = self.lineas_del_nodo[i]
-                        pf = mNlineas[id][2]
-                        pt = mNlineas[id][3]
+                            #Borro existencia de la linea
+                            mlineas[id][1] = 0
+                            mlineas[id][2] = 0
+                            mlineas[id][3] = 0
+                            mlineas[id][4] = 0
+                            mlineas[id][5] = 0
+                            mlineas[id][6] = 0
+                            mlineas[id][12] = 0
 
-                        #pueden ser una o dos lineas si es nodo o NA
-                        id = self.lineas_del_nodo[i]
-                        pf = mNlineas[id][2]
-                        pt = mNlineas[id][3]
+                            #Al proximo nodo le quito a n como proximo nodo
+                            mnodos[p][4] = mnodos[p][4] - 1
+                            for v in range (1, 32):
+                                if mnodos[p][4 + v] == id:
+                                    for m in range (v, 31):
+                                        mnodos[p][4 + m] = mnodos[p][4 + m + 1]
+                                    mnodos[p][4 + 32] = 0
+                                    v = 32
 
-                        #detecto proximos nodos asi les puedo pasar los nodos asociados
-                        #, al proximo nodo le transmito los asociados del actual
-                        if pf==n:
-                            na = nodos_asociados[pt]
-                            for j in range (0, len(nodos_asociados[n])):
-                                na.append(nodos_asociados[n][j])
-                            nodos_asociados[pt] = na
-                        elif pt==n:
-                            na = nodos_asociados[pf]
-                            for j in range (0, len(nodos_asociados[n])):
-                                na.append(nodos_asociados[n][j])
-                            nodos_asociados[pf] = na
-                        else:
-                            QMessageBox.information(None, "Mensaje", "Error en línea : " + str(mNlineas[id][1]))
+                        #Anulo el nodo que ya navegué
+                        mnodos[n][1] = 0
+                        mnodos[n][45] = 0
 
-                        mNlineas[id][1] = 0
-                        mNlineas[id][2] = 0
-                        mNlineas[id][3] = 0
-                        mNlineas[id][4] = 0
-                        mNlineas[id][5] = 0
-                        mNlineas[id][6] = 0
-                        mNlineas[id][12] = 0
-                        mNnodos[pf][4] = mNnodos[pf][4] - 1
-                        for v in range (1, 32):
-                            if mNnodos[pf][4 + v] == id:
-                                for m in range (v, 31):
-                                    mNnodos[pf][4 + m] = mNnodos[pf][4 + m + 1]
-                                mNnodos[pf][4 + 32] = 0
-                                v = 32
-                        mNnodos[pt][4] = mNnodos[pt][4] - 1
-                        for v in range (1, 32):
-                            if mNnodos[pt][4 + v] == id:
-                                for m in range (v, 31):
-                                    mNnodos[pt][4 + m] = mNnodos[pt][4 + m + 1]
-                                mNnodos[pt][4 + 32] = 0
-                                v = 32
-                    mNnodos[n][1] = 0
-                    mnodos[n][45] = 0
+                    else: #Si el spur es una salida de alimentador:
+                        #Si posee nodos asociados los paso a la base
+                        if len(nodos_asociados[n])>0:
 
-        #para la proxima pasada quito las salidas ya asignadas
-        for n in range (0, len(mNnodos)):
-            if mNnodos[n][1]!=0 and mNnodos[n][2]==8:
-                if len(nodos_asociados[n])>0:
-                     mNnodos[n][2] = 0
-                     mNnodos[n][42] = 1
-                     f = open(os.path.join(basepath,"salidas", 'salidas_nodos.txt'), 'a')
-                     f.write('\n' + str(nodos_geoname[n]) + chr(9) + str(n) + chr(9) + str(nodos_asociados[n]))
-                     f.close()
-                     cursor = conn.cursor()
-                     cursor.execute("INSERT INTO Nodos_Alimentador SELECT geoname, " + str(nodos_geoname[n]) + " FROM Nodos WHERE geoname IN (" + str(nodos_geoname[n]) + "," + str(nodos_asociados[n]).replace('[','').replace(']','') + ")")
-                     conn.commit()
-                     nodos_asociados[n] = []
-                     nodos_asociados[n].append(0)
-                     #QMessageBox.information(None, "Mensaje", "Anulo salida : " + str(mNnodos[n][1]) + " tiene " + str(len(nodos_asociados[n])) + " nodos asociados. Queda en " + str(mNnodos[n][2]))
+                            #f = open(os.path.join(basepath,"salidas", 'salidas_nodos.txt'), 'a')
+                            #f.write('\n' + str(nodos_geoname[n]) + chr(9) + str(n) + chr(9) + str(nodos_asociados[n]))
+                            #f.close()
 
-        #si tengo todavia para navegar, sumo un nivel
+                            cursor = conn.cursor()
+                            try:
+                                cursor.execute("INSERT INTO Nodos_Alimentador SELECT geoname, " + str(nodos_geoname[n]) + " FROM Nodos WHERE Nodos.Tension>0 AND geoname IN (" + str(nodos_geoname[n]) + "," + str(nodos_asociados[n]).replace('[','').replace(']','') + ")")
+                                conn.commit()
+                            except:
+                                conn.rollback()
+                            #Ya grabados los nodos asociados a la salida, desasociamos los nodos para que no pasen aguas arriba
+                            nodos_asociados[n] = []
+                            #nodos_asociados[n].append(0)
+                            #Convierto a la salida en un nodo comun para poder seguir aguas arriba
+                            mnodos[n][2] = 0
+
+        #si tengo todavia salidas para navegar, sumo un nivel
         existe=0
-        for n in range (0, len(mNnodos)):
-            if mNnodos[n][1]!=0 and mNnodos[n][2]==8:
+        for n in range (0, len(mnodos)):
+            if mnodos[n][1]!=0 and mnodos[n][2]==8:
                 existe=1
-                #QMessageBox.information(None, "Mensaje", "Salida : " + str(mNnodos[n][1]))
-                n = len(mNnodos)
+                #QMessageBox.information(None, "Mensaje", "Salida : " + str(mnodos[n][1]))
+                n = len(mnodos)
 
         if existe==1:
             nivel = nivel + 1
@@ -663,35 +603,16 @@ def nodos_por_salida(self, conn, mnodos, mlineas):
         else:
             seguir = 0
 
-    #f = open(os.path.join(basepath,"salidas", 'nodos_salida.txt'), 'w')
-    #for n in range (0, len(mNnodos)):
-    #    if mNnodos[n][42]==1:
-    #        f.write('\n' + str(nodos_geoname[n]) + chr(9) + str(n) + chr(9) + str(nodos_asociados[n]))
-    #f.close()
-
-    #for n in range (0, len(mNnodos)):
-    #    if mNnodos[n][42]==1:
-    #        #mNnodos[n][40]=nodos_geoname[n]
-    #        cursor = conn.cursor()
-    #        cursor.execute("SELECT Val1 FROM Nodos WHERE geoname=" + str(nodos_geoname[n]))
-    #        rs = tuple(cursor)
-    #        if len(rs)>0:
-    #            alimentador=rs[0][0]
-    #        else:
-    #            alimentador="<desc.>"
-    #        cursor.close()
-    #        cursor = conn.cursor()
-    #        cursor.execute("UPDATE Nodos SET Alimentador = '" + alimentador + "' WHERE Alimentador <> '" + alimentador + "' AND geoname IN (" + str(nodos_geoname[n]) + ',' + str(nodos_asociados[n]).replace('[','').replace(']','') + ")")
-    #        conn.commit()
-
     cursor = conn.cursor()
-    cursor.execute("UPDATE A SET d=o FROM (SELECT Nodos.Alimentador AS d, Nodos_1.Val1 AS o FROM Nodos_Alimentador INNER JOIN Nodos ON Nodos_Alimentador.Geoname = Nodos.Geoname INNER JOIN Nodos AS Nodos_1 ON Nodos_Alimentador.Id = Nodos_1.Geoname AND Nodos.Alimentador <> Nodos_1.Val1 WHERE (Nodos.Elmt <> 8)) A")
-    cursor.execute("UPDATE A SET d=o FROM (SELECT Lineas.Alimentador AS d, Nodos.Alimentador AS o FROM Nodos INNER JOIN Lineas ON Nodos.Geoname = Lineas.Desde AND Nodos.Alimentador <> Lineas.Alimentador INNER JOIN Nodos AS Nodos_1 ON Lineas.Hasta = Nodos_1.Geoname AND Nodos.Alimentador = Nodos_1.Alimentador) A")
-    cursor.execute("UPDATE A SET d=o FROM (SELECT Lineas.Alimentador AS d, Nodos.Alimentador AS o FROM Nodos INNER JOIN Lineas ON Nodos.Geoname = Lineas.Desde AND Nodos.Alimentador <> Lineas.Alimentador INNER JOIN Nodos AS Nodos_1 ON Lineas.Hasta = Nodos_1.Geoname WHERE (Nodos_1.Estado = 3)) A")
-    cursor.execute("UPDATE A SET d=o FROM (SELECT Lineas.Alimentador AS d, Nodos.Alimentador AS o FROM Nodos INNER JOIN Lineas ON Nodos.Alimentador <> Lineas.Alimentador AND Nodos.Geoname = Lineas.Hasta INNER JOIN Nodos AS Nodos_1 ON Lineas.Desde = Nodos_1.Geoname WHERE (Nodos_1.Estado = 3)) A")
-    conn.commit()
+    try:
+        cursor.execute("UPDATE A SET d=o FROM (SELECT Nodos.Alimentador AS d, Nodos_1.Val1 AS o FROM Nodos_Alimentador INNER JOIN Nodos ON Nodos_Alimentador.Geoname = Nodos.Geoname INNER JOIN Nodos AS Nodos_1 ON Nodos_Alimentador.Id = Nodos_1.Geoname AND Nodos.Alimentador <> Nodos_1.Val1 WHERE (Nodos.Elmt <> 8)) A")
+        cursor.execute("UPDATE A SET d=o FROM (SELECT Lineas.Alimentador AS d, Nodos.Alimentador AS o FROM Nodos INNER JOIN Lineas ON Nodos.Geoname = Lineas.Desde AND Nodos.Alimentador <> Lineas.Alimentador INNER JOIN Nodos AS Nodos_1 ON Lineas.Hasta = Nodos_1.Geoname AND Nodos.Alimentador = Nodos_1.Alimentador) A")
+        cursor.execute("UPDATE A SET d=o FROM (SELECT Lineas.Alimentador AS d, Nodos.Alimentador AS o FROM Nodos INNER JOIN Lineas ON Nodos.Geoname = Lineas.Desde AND Nodos.Alimentador <> Lineas.Alimentador INNER JOIN Nodos AS Nodos_1 ON Lineas.Hasta = Nodos_1.Geoname WHERE (Nodos_1.Estado = 3)) A")
+        cursor.execute("UPDATE A SET d=o FROM (SELECT Lineas.Alimentador AS d, Nodos.Alimentador AS o FROM Nodos INNER JOIN Lineas ON Nodos.Alimentador <> Lineas.Alimentador AND Nodos.Geoname = Lineas.Hasta INNER JOIN Nodos AS Nodos_1 ON Lineas.Desde = Nodos_1.Geoname WHERE (Nodos_1.Estado = 3)) A")
+        conn.commit()
+    except:
+        conn.rollback()
+        QMessageBox.information(None, 'EnerGis 5', "No se pudo incroporar el Proyecto !")
 
-    for n in range (0, len(mNlineas)):
-        if mNlineas[n][1]!=0:
-            mlineas[n][12] = 1
     pass
+

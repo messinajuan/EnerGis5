@@ -61,8 +61,12 @@ class frmAbmPostes(DialogType, DialogBase):
         if reply == QMessageBox.No:
             return
 
-        cursor.execute("INSERT INTO Estructuras (id, descripcion, estilo) VALUES (" + str(id) + ",'" + descripcion + "','" + estilo + "')")
-        cnn.commit()
+        try:
+            cursor.execute("INSERT INTO Estructuras (id, descripcion, estilo) VALUES (" + str(id) + ",'" + descripcion + "','" + estilo + "')")
+            cnn.commit()
+        except:
+            cnn.rollback()
+            QMessageBox.information(None, 'EnerGis 5', "No se pudieron insertar Estructuras !")
         pass
 
     def agregar_poste(self):
@@ -83,8 +87,12 @@ class frmAbmPostes(DialogType, DialogBase):
         if reply == QMessageBox.No:
             return
 
-        cursor.execute("INSERT INTO Postes (id, descripcion, estilo, value1, value2) VALUES (" + str(id) + ",'" + descripcion + "','" + estilo + "','" + value1 + "','" + value2 + "')")
-        cnn.commit()
+        try:
+            cursor.execute("INSERT INTO Postes (id, descripcion, estilo, value1, value2) VALUES (" + str(id) + ",'" + descripcion + "','" + estilo + "','" + value1 + "','" + value2 + "')")
+            cnn.commit()
+        except:
+            cnn.rollback()
+            QMessageBox.information(None, 'EnerGis 5', "No se pudieron insertar Postes !")
         pass
 
     def salir(self):

@@ -11,18 +11,19 @@
 #---------------------------------------------------------------------
 
 import os
-#from PyQt5.QtWidgets import QMessageBox
-from PyQt5.QtGui import QDoubleValidator
+from PyQt5.QtWidgets import QMessageBox
+from PyQt5.QtGui import QDoubleValidator, QIntValidator
 from PyQt5 import uic
 
 DialogBase, DialogType = uic.loadUiType(os.path.join(os.path.dirname(__file__),'frm_reguladores.ui'))
 
 class frmReguladores(DialogType, DialogBase):
         
-    def __init__(self, conn, geoname):
+    def __init__(self, tipo_usuario, conn, geoname):
         super().__init__()
         self.setupUi(self)
         self.setFixedSize(self.size())
+        self.tipo_usuario = tipo_usuario
         self.conn = conn
         self.geoname = geoname
         vfloat = QDoubleValidator()
@@ -30,15 +31,15 @@ class frmReguladores(DialogType, DialogBase):
         self.txtMinTap.setValidator(vfloat)
         self.txtMaxTap.setValidator(vfloat)
         self.txtPasoTap.setValidator(vfloat)
-        self.inicio()
-        pass
+        vint = QIntValidator()
+        self.txtDescargadores.setValidator(vint)
 
-    def inicio(self):
+        if self.tipo_usuario==4:
+            self.cmdAceptar.setEnabled(False)
 
         cnn = self.conn
         cursor = cnn.cursor()
-        rs = []
-        cursor.execute("SELECT ISNULL(Val1,''), ISNULL(Val2,''), ISNULL(Val3,''), ISNULL(Val4,'') FROM Nodos WHERE geoname=" + str(self.geoname))
+        cursor.execute("SELECT ISNULL(Val1,''), ISNULL(Val2,''), ISNULL(Val3,''), ISNULL(Val4,''), ISNULL(Val5,'0') FROM Nodos WHERE geoname=" + str(self.geoname))
         #convierto el cursor en array
         rs = tuple(cursor)
         cursor.close()
@@ -47,6 +48,7 @@ class frmReguladores(DialogType, DialogBase):
         self.txtMinTap.setText(rs[0][1])
         self.txtMaxTap.setText(rs[0][2])
         self.txtPasoTap.setText(rs[0][3])
+        self.txtDescargadores.setText(rs[0][4])
 
         self.cmdAceptar.clicked.connect(self.aceptar)
         self.cmdSalir.clicked.connect(self.salir)
@@ -60,11 +62,16 @@ class frmReguladores(DialogType, DialogBase):
         str_set = str_set + ", Val2='" + self.txtMinTap.text() + "'"
         str_set = str_set + ", Val3='" + self.txtMaxTap.text() + "'"
         str_set = str_set + ", Val4='" + self.txtPasoTap.text() + "'"
+        str_set = str_set + ", Val5='" + self.txtDescargadores.text() + "'"
 
         #QMessageBox.information(None, 'EnerGis 5', str_set)
-        cursor.execute("UPDATE Nodos SET " + str_set + " WHERE Geoname=" + str(self.geoname))
-        cnn.commit()
-        #QMessageBox.information(None, 'EnerGis 5', str_set)
+        try:
+            cursor.execute("UPDATE Nodos SET " + str_set + " WHERE Geoname=" + str(self.geoname))
+            cnn.commit()
+        except:
+            cnn.rollback()
+            QMessageBox.information(None, 'EnerGis 5', 'No se pudo actualizar la Base de Datos')
+
         self.close()
         pass
 

@@ -11,7 +11,7 @@
 #---------------------------------------------------------------------
 
 import os
-from PyQt5 import QtCore
+#from PyQt5 import QtCore
 from matplotlib import pyplot
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from PyQt5 import uic
@@ -24,7 +24,6 @@ class frmEnergias(DialogType, DialogBase):
         super().__init__()
         self.setupUi(self)
         self.setFixedSize(self.size())
-
         self.grafico.addWidget(Canvas_grafico())
 
         self.show()

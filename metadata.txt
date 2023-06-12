@@ -1,15 +1,14 @@
 [general]
-name=EnerGis
-email=messinajuan@yahoo.com.ar
-author=Juan Messina
-qgisMinimumVersion=3.22
-description=Manage EnerGis data
-about=The plugin allows to manage utilities networks.
-version=5.0
-homepage=http://servimap.com.ar
-tracker=https://github.com/messinajuan
-repository=https://github.com/messinajuan/EnerGis5
-icon=energis.png
-experimental=True
-deprecated=False
-
+name = EnerGis
+email = messinajuan@yahoo.com.ar
+author = Juan Messina
+qgisMinimumVersion = 3.22
+about = Base de Datos de EnerGis
+description = Gestion de Redes Electricas
+version = 5.0.12
+homepage = http://www.servimap.com.ar
+tracker = https://github.com/messinajuan/EnerGis5/issues
+repository = https://github.com/messinajuan/EnerGis5
+icon = https://www.servimap.com.ar/files/energis/energis5/icons/energis.ico
+experimental = False
+deprecated = False

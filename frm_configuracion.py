@@ -36,7 +36,6 @@ class frmConfiguracion(DialogType, DialogBase):
         f.close()
 
         self.txtConexion.setText(ini[0])
-
         self.cmdAceptar.clicked.connect(self.aceptar)
         self.cmdSalir.clicked.connect(self.salir)
         pass

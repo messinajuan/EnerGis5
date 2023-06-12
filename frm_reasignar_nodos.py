@@ -26,14 +26,10 @@ class frmReasignarNodos(DialogType, DialogBase):
         self.mapCanvas = mapCanvas
         self.conn = conn
         self.inn = inn
-        self.inicio()
-        pass
-        
-    def inicio(self):
+
         self.cmbCapa.addItem('Todas')
         cnn = self.conn
         cursor = cnn.cursor()
-        tensiones = []
         cursor.execute("SELECT Tension FROM Niveles_Tension WHERE Tension>=200")
         #convierto el cursor en array
         tensiones = tuple(cursor)
@@ -62,7 +58,6 @@ class frmReasignarNodos(DialogType, DialogBase):
         self.liwElementos.clear()
         cnn = self.conn
         cursor = cnn.cursor()
-        rst = []
         cursor.execute("SELECT DISTINCT Val1, conexionado, tipo_ct FROM (Transformadores INNER JOIN Ct ON Transformadores.Id_ct = Ct.Id_ct) INNER JOIN Nodos ON Ct.Id_ct = Nodos.Nombre WHERE elmt=4 AND geoname IN (" + self.inn + ")")
         #convierto el cursor en array
         rst = tuple(cursor)
@@ -82,8 +77,7 @@ class frmReasignarNodos(DialogType, DialogBase):
 
         cnn = self.conn
         cursor = cnn.cursor()
-        rst = []
-        cursor.execute("SELECT DISTINCT UPPER(Val1) FROM Nodos WHERE (elmt=2 OR elmt=3) AND NOT Val1 IS NULL AND NOT Val1='' AND geoname IN (" + self.inn + ")" + str_tensiones)
+        cursor.execute("SELECT DISTINCT UPPER(Val1) FROM Nodos WHERE Nodos.Tension>0 AND (elmt=2 OR elmt=3) AND NOT Val1 IS NULL AND NOT Val1='' AND geoname IN (" + self.inn + ")" + str_tensiones)
         #convierto el cursor en array
         rst = tuple(cursor)
         cursor.close()
@@ -138,16 +132,17 @@ class frmReasignarNodos(DialogType, DialogBase):
         if self.chkInstalacion.isChecked() == True:
             str_set = str_set + ", modificacion='" + str(self.datInstalacion.date().toPyDate()).replace('-','') + "'"
 
-        #QMessageBox.information(None, 'EnerGis 5', str_set)
-        #QMessageBox.information(None, 'EnerGis 5', str_where)
-
         reply = QMessageBox.question(None, 'EnerGis 5', 'Desea cambiar los datos de los nodos seleccionados?', QMessageBox.Yes, QMessageBox.No)
         if reply == QMessageBox.No:
             return
         cnn = self.conn
         cursor = cnn.cursor()
-        cursor.execute("UPDATE Nodos SET " + str_set + " WHERE " + str_where)
-        cnn.commit()
+        try:
+            cursor.execute("UPDATE Nodos SET " + str_set + " WHERE " + str_where)
+            cnn.commit()
+        except:
+            cnn.rollback()
+            QMessageBox.information(None, 'EnerGis 5', 'No se pudo actualizar la Base de Datos')
         pass
 
     def elegir_uucc(self):

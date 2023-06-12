@@ -26,20 +26,16 @@ class frmBuscar(DialogType, DialogBase):
         self.setupUi(self)
 
         self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
-
-        self.inicio(conn)
         self.setFixedSize(self.size())
         self.mapCanvas = mapCanvas
         self.conn = conn
         
-    def inicio(self, conn):
         basepath = os.path.dirname(os.path.realpath(__file__))
         img_buscar = os.path.join(basepath,"icons", 'img_buscar.png')
         self.cmdBuscar.setIcon(QtGui.QIcon(img_buscar))
         #QMessageBox.information(None, 'EnerGis 5', 'Inicio')
         cnn = conn
         cursor = cnn.cursor()
-        elementos_nodos = []
         cursor.execute("SELECT id, Descripcion FROM Elementos_Nodos")
         #convierto el cursor en array
         elementos_nodos = tuple(cursor)
@@ -54,6 +50,8 @@ class frmBuscar(DialogType, DialogBase):
             self.liwElementos.addItem(item)
 
         self.liwElementos.addItem('Usuario')
+        self.liwElementos.addItem('Electrodependiente')
+        self.liwElementos.addItem('Prosumidor')
         self.liwElementos.addItem('Medidor')
         self.liwElementos.addItem('Poste')
         self.liwElementos.addItem('Línea')
@@ -113,68 +111,96 @@ class frmBuscar(DialogType, DialogBase):
                     strSql = "SELECT TOP 300 Nodos.Geoname, Usuarios.nombre As Nombre, Calle + ' ' + altura AS Direccion, obj.STEnvelope().ToString() FROM (Usuarios INNER JOIN Suministros ON Usuarios.id_suministro = Suministros.id_suministro) INNER JOIN Nodos ON Suministros.id_nodo = Nodos.Geoname"
                     pass
             else:
-                if self.liwElementos.selectedItems()[0].text() == "Medidor":
-                    if self.cmbCampos.currentText() == "Id Medidor":
-                        strSql = "SELECT Nodos.Geoname, Usuarios.Nombre, Medidores.nro_medidor AS Medidor, obj.STEnvelope().ToString() FROM (Medidores INNER JOIN Usuarios ON Medidores.id_usuario = Usuarios.id_usuario) INNER JOIN (Nodos INNER JOIN Suministros ON Nodos.Geoname = Suministros.id_nodo) ON Usuarios.id_suministro = Suministros.id_suministro WHERE Medidores.nro_medidor = '" + str(self.txtValor.text()) + "'"
-                        pass
+                if self.liwElementos.selectedItems()[0].text() == "Electrodependiente":
                     if self.cmbCampos.currentText() == "Id Usuario":
-                        strSql = "SELECT Nodos.Geoname, Usuarios.Nombre, Medidores.nro_medidor AS Medidor, obj.STEnvelope().ToString() FROM (Medidores INNER JOIN Usuarios ON Medidores.id_usuario = Usuarios.id_usuario) INNER JOIN (Nodos INNER JOIN Suministros ON Nodos.Geoname = Suministros.id_nodo) ON Usuarios.id_suministro = Suministros.id_suministro WHERE Usuarios.id_usuario = " + str(self.txtValor.text())
+                        strSql = "SELECT Nodos.Geoname, Usuarios.nombre As Nombre, Calle + ' ' + altura AS Direccion, obj.STEnvelope().ToString() FROM (Usuarios INNER JOIN Suministros ON Usuarios.id_suministro = Suministros.id_suministro) INNER JOIN Nodos ON Suministros.id_nodo = Nodos.Geoname WHERE electrodependiente='S' AND Usuarios.id_usuario = " + str(self.txtValor.text())
                         pass
                     if self.cmbCampos.currentText() == "Id Suministro":
-                        strSql = "SELECT Nodos.Geoname, Usuarios.Nombre, Medidores.nro_medidor AS Medidor, obj.STEnvelope().ToString() FROM (Medidores INNER JOIN Usuarios ON Medidores.id_usuario = Usuarios.id_usuario) INNER JOIN (Nodos INNER JOIN Suministros ON Nodos.Geoname = Suministros.id_nodo) ON Usuarios.id_suministro = Suministros.id_suministro WHERE Usuarios.id_suministro = '" + str(self.txtValor.text()) + "'"
+                        strSql = "SELECT Nodos.Geoname, Usuarios.nombre As Nombre, Calle + ' ' + altura AS Direccion, obj.STEnvelope().ToString() FROM (Usuarios INNER JOIN Suministros ON Usuarios.id_suministro = Suministros.id_suministro) INNER JOIN Nodos ON Suministros.id_nodo = Nodos.Geoname WHERE electrodependiente='S' AND Usuarios.id_suministro = '" + str(self.txtValor.text()) + "'"
+                        pass
+                    if self.cmbCampos.currentText() == "Nombre":
+                        strSql = "SELECT TOP 300 Nodos.Geoname, Usuarios.nombre As Nombre, Calle + ' ' + altura AS Direccion, obj.STEnvelope().ToString() FROM (Usuarios INNER JOIN Suministros ON Usuarios.id_suministro = Suministros.id_suministro) INNER JOIN Nodos ON Suministros.id_nodo = Nodos.Geoname WHERE electrodependiente='S' AND Usuarios.nombre LIKE '%" + str(self.txtValor.text()) + "%'"
                         pass
                     if str(self.txtValor.text())=="":
-                        strSql = "SELECT Nodos.Geoname, Usuarios.Nombre, Medidores.nro_medidor AS Medidor, obj.STEnvelope().ToString() FROM (Medidores INNER JOIN Usuarios ON Medidores.id_usuario = Usuarios.id_usuario) INNER JOIN (Nodos INNER JOIN Suministros ON Nodos.Geoname = Suministros.id_nodo) ON Usuarios.id_suministro = Suministros.id_suministro"
+                        strSql = "SELECT TOP 300 Nodos.Geoname, Usuarios.nombre As Nombre, Calle + ' ' + altura AS Direccion, obj.STEnvelope().ToString() FROM (Usuarios INNER JOIN Suministros ON Usuarios.id_suministro = Suministros.id_suministro) INNER JOIN Nodos ON Suministros.id_nodo = Nodos.Geoname WHERE electrodependiente='S'"
                         pass
                 else:
-                    if self.liwElementos.selectedItems()[0].text() == "Poste":
-                        if self.cmbCampos.currentText() == "Geoname":
-                            strSql = "SELECT Postes.Geoname, Postes.Tipo, Postes.Aislacion, obj.STEnvelope().ToString() FROM Postes WHERE Postes.Geoname = " + str(self.txtValor.text())
+                    if self.liwElementos.selectedItems()[0].text() == "Prosumidor":
+                        if self.cmbCampos.currentText() == "Id Usuario":
+                            strSql = "SELECT Nodos.Geoname, Usuarios.nombre As Nombre, Calle + ' ' + altura AS Direccion, obj.STEnvelope().ToString() FROM (Usuarios INNER JOIN Suministros ON Usuarios.id_suministro = Suministros.id_suministro) INNER JOIN Nodos ON Suministros.id_nodo = Nodos.Geoname WHERE prosumidor<>'' AND Usuarios.id_usuario = " + str(self.txtValor.text())
+                            pass
+                        if self.cmbCampos.currentText() == "Id Suministro":
+                            strSql = "SELECT Nodos.Geoname, Usuarios.nombre As Nombre, Calle + ' ' + altura AS Direccion, obj.STEnvelope().ToString() FROM (Usuarios INNER JOIN Suministros ON Usuarios.id_suministro = Suministros.id_suministro) INNER JOIN Nodos ON Suministros.id_nodo = Nodos.Geoname WHERE prosumidor<>'' AND Usuarios.id_suministro = '" + str(self.txtValor.text()) + "'"
+                            pass
+                        if self.cmbCampos.currentText() == "Nombre":
+                            strSql = "SELECT TOP 300 Nodos.Geoname, Usuarios.nombre As Nombre, Calle + ' ' + altura AS Direccion, obj.STEnvelope().ToString() FROM (Usuarios INNER JOIN Suministros ON Usuarios.id_suministro = Suministros.id_suministro) INNER JOIN Nodos ON Suministros.id_nodo = Nodos.Geoname WHERE prosumidor<>'' AND Usuarios.nombre LIKE '%" + str(self.txtValor.text()) + "%'"
                             pass
                         if str(self.txtValor.text())=="":
-                            strSql = "SELECT Postes.Geoname, Postes.Tipo, Postes.Aislacion, obj.STEnvelope().ToString() FROM Postes"
+                            strSql = "SELECT TOP 300 Nodos.Geoname, Usuarios.nombre As Nombre, Calle + ' ' + altura AS Direccion, obj.STEnvelope().ToString() FROM (Usuarios INNER JOIN Suministros ON Usuarios.id_suministro = Suministros.id_suministro) INNER JOIN Nodos ON Suministros.id_nodo = Nodos.Geoname WHERE prosumidor<>''"
                             pass
                     else:
-                        if self.liwElementos.selectedItems()[0].text() == "Línea":
-                            if self.cmbCampos.currentText() == "Geoname":
-                                strSql = "SELECT Lineas.Geoname, Elementos_Lineas.Descripcion, Lineas.Fase, obj.STEnvelope().ToString(), Lineas.Tension, Lineas.Alimentador FROM Elementos_Lineas INNER JOIN Lineas ON Elementos_Lineas.Id = Lineas.Elmt WHERE Lineas.Geoname = " + str(self.txtValor.text())
+                        if self.liwElementos.selectedItems()[0].text() == "Medidor":
+                            if self.cmbCampos.currentText() == "Id Medidor":
+                                strSql = "SELECT Nodos.Geoname, Usuarios.Nombre, Medidores.nro_medidor AS Medidor, obj.STEnvelope().ToString() FROM (Medidores INNER JOIN Usuarios ON Medidores.id_usuario = Usuarios.id_usuario) INNER JOIN (Nodos INNER JOIN Suministros ON Nodos.Geoname = Suministros.id_nodo) ON Usuarios.id_suministro = Suministros.id_suministro WHERE Medidores.nro_medidor = '" + str(self.txtValor.text()) + "'"
                                 pass
-                            if self.cmbCampos.currentText() == "Conductor":
-                                strSql = "SELECT TOP 50 Lineas.Geoname, Elementos_Lineas.Descripcion, Lineas.Fase, obj.STEnvelope().ToString(), Lineas.Tension, Lineas.Alimentador FROM Elementos_Lineas INNER JOIN Lineas ON Elementos_Lineas.Id = Lineas.Elmt WHERE Elementos_Lineas.Descripcion LIKE '%" + str(self.txtValor.text()) + "%'"
+                            if self.cmbCampos.currentText() == "Id Usuario":
+                                strSql = "SELECT Nodos.Geoname, Usuarios.Nombre, Medidores.nro_medidor AS Medidor, obj.STEnvelope().ToString() FROM (Medidores INNER JOIN Usuarios ON Medidores.id_usuario = Usuarios.id_usuario) INNER JOIN (Nodos INNER JOIN Suministros ON Nodos.Geoname = Suministros.id_nodo) ON Usuarios.id_suministro = Suministros.id_suministro WHERE Usuarios.id_usuario = " + str(self.txtValor.text())
+                                pass
+                            if self.cmbCampos.currentText() == "Id Suministro":
+                                strSql = "SELECT Nodos.Geoname, Usuarios.Nombre, Medidores.nro_medidor AS Medidor, obj.STEnvelope().ToString() FROM (Medidores INNER JOIN Usuarios ON Medidores.id_usuario = Usuarios.id_usuario) INNER JOIN (Nodos INNER JOIN Suministros ON Nodos.Geoname = Suministros.id_nodo) ON Usuarios.id_suministro = Suministros.id_suministro WHERE Usuarios.id_suministro = '" + str(self.txtValor.text()) + "'"
                                 pass
                             if str(self.txtValor.text())=="":
-                                strSql = "SELECT Lineas.Geoname, Elementos_Lineas.Descripcion, Lineas.Fase, obj.STEnvelope().ToString(), Lineas.Tension, Lineas.Alimentador FROM Elementos_Lineas INNER JOIN Lineas ON Elementos_Lineas.Id = Lineas.Elmt"
+                                strSql = "SELECT Nodos.Geoname, Usuarios.Nombre, Medidores.nro_medidor AS Medidor, obj.STEnvelope().ToString() FROM (Medidores INNER JOIN Usuarios ON Medidores.id_usuario = Usuarios.id_usuario) INNER JOIN (Nodos INNER JOIN Suministros ON Nodos.Geoname = Suministros.id_nodo) ON Usuarios.id_suministro = Suministros.id_suministro"
                                 pass
                         else:
-                            if self.liwElementos.selectedItems()[0].text() == 'Nodo':
+                            if self.liwElementos.selectedItems()[0].text() == "Poste":
                                 if self.cmbCampos.currentText() == "Geoname":
-                                    strSql = "SELECT Nodos.Geoname, Nodos.Nombre As Nombre, Elementos_Nodos.Descripcion As Elemento, obj.STEnvelope().ToString() FROM Elementos_Nodos RIGHT JOIN Nodos ON Elementos_Nodos.Id = Nodos.Elmt WHERE Nodos.Geoname = " + str(self.txtValor.text())
-                                    pass
-                                if self.cmbCampos.currentText() == "Nombre":
-                                    strSql = "SELECT TOP 300 Nodos.Geoname, Nodos.Nombre As Nombre, Elementos_Nodos.Descripcion As Elemento, obj.STEnvelope().ToString() FROM Elementos_Nodos RIGHT JOIN Nodos ON Elementos_Nodos.Id = Nodos.Elmt WHERE Nodos.Nombre LIKE '%" + str(self.txtValor.text()) + "%'"
-                                    pass
-                                if self.cmbCampos.currentText() == "Descripción":
-                                    strSql = "SELECT Nodos.Geoname, Nodos.Nombre As Nombre, Nodos.Descripcion As Descripción, obj.STEnvelope().ToString() FROM Nodos WHERE Nodos.Descripcion LIKE '%" + str(self.txtValor.text()) + "%'"
+                                    strSql = "SELECT Postes.Geoname, Postes.Tipo, Postes.Aislacion, obj.STEnvelope().ToString() FROM Postes WHERE Postes.Geoname = " + str(self.txtValor.text())
                                     pass
                                 if str(self.txtValor.text())=="":
-                                    strSql = "SELECT Nodos.Geoname, Nodos.Nombre As Nombre, Elementos_Nodos.Descripcion As Elemento, obj.STEnvelope().ToString() FROM Elementos_Nodos RIGHT JOIN Nodos ON Elementos_Nodos.Id = Nodos.Elmt"
+                                    strSql = "SELECT Postes.Geoname, Postes.Tipo, Postes.Aislacion, obj.STEnvelope().ToString() FROM Postes"
                                     pass
                             else:
-                                #busco en el ItemData
-                                item  = self.liwElementos.selectedItems()[0]
-                                itemdata = str(item.data(QtCore.Qt.UserRole))
-                                if self.cmbCampos.currentText() == "Geoname":
-                                    strSql = "SELECT Nodos.Geoname, Nodos.Nombre As Nombre, Elementos_Nodos.Descripcion As Elemento, obj.STEnvelope().ToString() FROM Elementos_Nodos RIGHT JOIN Nodos ON Elementos_Nodos.Id = Nodos.Elmt WHERE Nodos.elmt=" + itemdata + " AND Nodos.Geoname = " + str(self.txtValor.text())
-                                    pass
-                                if self.cmbCampos.currentText() == "Nombre":
-                                    strSql = "SELECT TOP 300 Nodos.Geoname, Nodos.Nombre As Nombre, Elementos_Nodos.Descripcion As Elemento, obj.STEnvelope().ToString() FROM Elementos_Nodos RIGHT JOIN Nodos ON Elementos_Nodos.Id = Nodos.Elmt WHERE Nodos.elmt=" + itemdata + " AND Nodos.Nombre LIKE '%" + str(self.txtValor.text()) + "%'"
-                                    pass
-                                if self.cmbCampos.currentText() == "Descripción":
-                                    strSql = "SELECT Nodos.Geoname, Nodos.Nombre As Nombre, Nodos.Descripcion As Descripción, obj.STEnvelope().ToString() FROM Nodos WHERE Nodos.elmt=" + itemdata + " AND Nodos.Descripcion LIKE '%" + str(self.txtValor.text()) + "%'"
-                                    pass
-                                if str(self.txtValor.text())=="":
-                                    strSql = "SELECT Nodos.Geoname, Nodos.Nombre As Nombre, Elementos_Nodos.Descripcion As Elemento, obj.STEnvelope().ToString() FROM Elementos_Nodos RIGHT JOIN Nodos ON Elementos_Nodos.Id = Nodos.Elmt WHERE Nodos.elmt=" + itemdata
-                                    pass
+                                if self.liwElementos.selectedItems()[0].text() == "Línea":
+                                    if self.cmbCampos.currentText() == "Geoname":
+                                        strSql = "SELECT Lineas.Geoname, Elementos_Lineas.Descripcion, Lineas.Fase, obj.STEnvelope().ToString(), Lineas.Tension, Lineas.Alimentador FROM Elementos_Lineas INNER JOIN Lineas ON Elementos_Lineas.Id = Lineas.Elmt WHERE Lineas.Geoname = " + str(self.txtValor.text())
+                                        pass
+                                    if self.cmbCampos.currentText() == "Conductor":
+                                        strSql = "SELECT TOP 50 Lineas.Geoname, Elementos_Lineas.Descripcion, Lineas.Fase, obj.STEnvelope().ToString(), Lineas.Tension, Lineas.Alimentador FROM Elementos_Lineas INNER JOIN Lineas ON Elementos_Lineas.Id = Lineas.Elmt WHERE Elementos_Lineas.Descripcion LIKE '%" + str(self.txtValor.text()) + "%'"
+                                        pass
+                                    if str(self.txtValor.text())=="":
+                                        strSql = "SELECT Lineas.Geoname, Elementos_Lineas.Descripcion, Lineas.Fase, obj.STEnvelope().ToString(), Lineas.Tension, Lineas.Alimentador FROM Elementos_Lineas INNER JOIN Lineas ON Elementos_Lineas.Id = Lineas.Elmt"
+                                        pass
+                                else:
+                                    if self.liwElementos.selectedItems()[0].text() == 'Nodo':
+                                        if self.cmbCampos.currentText() == "Geoname":
+                                            strSql = "SELECT Nodos.Geoname, Nodos.Nombre As Nombre, Elementos_Nodos.Descripcion As Elemento, obj.STEnvelope().ToString() FROM Elementos_Nodos RIGHT JOIN Nodos ON Elementos_Nodos.Id = Nodos.Elmt WHERE Nodos.Geoname = " + str(self.txtValor.text())
+                                            pass
+                                        if self.cmbCampos.currentText() == "Nombre":
+                                            strSql = "SELECT TOP 300 Nodos.Geoname, Nodos.Nombre As Nombre, Elementos_Nodos.Descripcion As Elemento, obj.STEnvelope().ToString() FROM Elementos_Nodos RIGHT JOIN Nodos ON Elementos_Nodos.Id = Nodos.Elmt WHERE Nodos.Nombre LIKE '%" + str(self.txtValor.text()) + "%'"
+                                            pass
+                                        if self.cmbCampos.currentText() == "Descripción":
+                                            strSql = "SELECT Nodos.Geoname, Nodos.Nombre As Nombre, Nodos.Descripcion As Descripción, obj.STEnvelope().ToString() FROM Nodos WHERE Nodos.Tension>0 AND Nodos.Descripcion LIKE '%" + str(self.txtValor.text()) + "%'"
+                                            pass
+                                        if str(self.txtValor.text())=="":
+                                            strSql = "SELECT Nodos.Geoname, Nodos.Nombre As Nombre, Elementos_Nodos.Descripcion As Elemento, obj.STEnvelope().ToString() FROM Elementos_Nodos RIGHT JOIN Nodos ON Elementos_Nodos.Id = Nodos.Elmt"
+                                            pass
+                                    else:
+                                        #busco en el ItemData
+                                        item  = self.liwElementos.selectedItems()[0]
+                                        itemdata = str(item.data(QtCore.Qt.UserRole))
+                                        if self.cmbCampos.currentText() == "Geoname":
+                                            strSql = "SELECT Nodos.Geoname, Nodos.Nombre As Nombre, Elementos_Nodos.Descripcion As Elemento, obj.STEnvelope().ToString() FROM Elementos_Nodos RIGHT JOIN Nodos ON Elementos_Nodos.Id = Nodos.Elmt WHERE Nodos.elmt=" + itemdata + " AND Nodos.Geoname = " + str(self.txtValor.text())
+                                            pass
+                                        if self.cmbCampos.currentText() == "Nombre":
+                                            strSql = "SELECT TOP 300 Nodos.Geoname, Nodos.Nombre As Nombre, Elementos_Nodos.Descripcion As Elemento, obj.STEnvelope().ToString() FROM Elementos_Nodos RIGHT JOIN Nodos ON Elementos_Nodos.Id = Nodos.Elmt WHERE Nodos.elmt=" + itemdata + " AND Nodos.Nombre LIKE '%" + str(self.txtValor.text()) + "%'"
+                                            pass
+                                        if self.cmbCampos.currentText() == "Descripción":
+                                            strSql = "SELECT Nodos.Geoname, Nodos.Nombre As Nombre, Nodos.Descripcion As Descripción, obj.STEnvelope().ToString() FROM Nodos WHERE Nodos.Tension>0 AND Nodos.elmt=" + itemdata + " AND Nodos.Descripcion LIKE '%" + str(self.txtValor.text()) + "%'"
+                                            pass
+                                        if str(self.txtValor.text())=="":
+                                            strSql = "SELECT Nodos.Geoname, Nodos.Nombre As Nombre, Elementos_Nodos.Descripcion As Elemento, obj.STEnvelope().ToString() FROM Elementos_Nodos RIGHT JOIN Nodos ON Elementos_Nodos.Id = Nodos.Elmt WHERE Nodos.elmt=" + itemdata
+                                            pass
 
         cnn = self.conn
         cursor = cnn.cursor()
@@ -195,6 +221,7 @@ class frmBuscar(DialogType, DialogBase):
                 self.tblResultado.setItem(i,j,item)
 
         self.tblResultado.setHorizontalHeaderLabels(encabezado)
+        self.tblResultado.setColumnWidth(self.tblResultado.columnCount() - 1, 0)
     
     def elijo_item(self):
         #QMessageBox.information(None, 'EnerGis 5', self.tblResultado.selectedItems()[0].text())

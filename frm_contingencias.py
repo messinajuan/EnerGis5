@@ -11,7 +11,7 @@
 #---------------------------------------------------------------------
 
 import os
-from PyQt5.QtWidgets import QTableWidgetItem
+from PyQt5.QtWidgets import QTableWidgetItem, QTreeWidgetItem
 from PyQt5.QtWidgets import QMessageBox
 #from PyQt5 import QtCore
 from PyQt5.QtCore import QDate
@@ -36,7 +36,6 @@ class frmContingencias (DialogType, DialogBase):
 
         cnn = self.conn
         cursor = cnn.cursor()
-        self.causas = []
         cursor.execute("SELECT * FROM Causas")
         #convierto el cursor en array
         self.causas = tuple(cursor)
@@ -72,6 +71,8 @@ class frmContingencias (DialogType, DialogBase):
         self.cmbTiempo.addItem('Ventoso')
         self.cmbTiempo.addItem('Ventoso - Lluvia')
         self.cmbTiempo.addItem('Ventoso - Lluvia - Descargas')
+
+        self.seleccionado = -1
 
         cursor = cnn.cursor()
         cursor.execute("SELECT ult_cont FROM log_ope")
@@ -111,6 +112,55 @@ class frmContingencias (DialogType, DialogBase):
             encabezado = [column[0] for column in cursor.description]
             cursor.close()
             self.lleno_grilla(encabezado, elementos)
+
+            #0:id
+            #1:fecha
+            #2:operacion
+            #3:contingencia
+            #4:Tipo_Elemento
+            #5:nombreElemento
+            #6:Causa
+            #7:Elemento_Falla
+            #8:Zona_Falla
+            #9:Tipo_Zona_Falla
+            #10:Est_Tiempo
+            #11:Responsable
+            #12:Observaciones
+
+            #self.treEventos.clear()
+            #if len(elementos) > 0:
+            #    self.treEventos.setColumnCount(len(elementos[0]))
+            #    self.treEventos.setHeaderLabels(encabezado)
+            #    #primera clave
+            #    fecha = '19000101'
+            #    contingencia = 0
+            #    nombre = ''
+            #    items = []
+            #    for i in range (0, len(elementos)):
+            #        #QMessageBox.information(None, 'EnerGis 5', str(elementos[i][1])[:10].replace('-',''))
+            #        dfecha = str(elementos[i][1])[:10].replace('-','')
+            #        if dfecha!=fecha:
+            #            fecha = str(elementos[i][1])[:10].replace('-','')
+            #            contingencia = 0
+            #            nombre = ''
+            #            item_fecha = QTreeWidgetItem(fecha)
+            #        else:
+            #            if elementos[i][3]!=contingencia:
+            #                contingencia=elementos[i][3]
+            #                nombre = ''
+            #                item_contingencia = QTreeWidgetItem([str(elementos[i][3])])
+            #                item_fecha.addChild(item_contingencia)
+            #            else:
+            #                if elementos[i][5]!=nombre:
+            #                    nombre=elementos[i][5]
+            #                    item_nombre = QTreeWidgetItem([str(elementos[i][5])])
+            #                    item_contingencia.addChild(item_nombre)
+            #                else:
+            #                    child = QTreeWidgetItem([elementos[i][2], elementos[i][4], elementos[i][6], elementos[i][7], elementos[i][8], elementos[i][10], elementos[i][11], elementos[i][12], elementos[i][0]])
+            #                    item_nombre.addChild(child)
+
+            #        items.append(item_fecha)
+            #    self.treEventos.insertTopLevelItems(0, items)
 
         if self.cmbListar.currentText()=='Contingencia':
             cursor = cnn.cursor()
@@ -157,7 +207,6 @@ class frmContingencias (DialogType, DialogBase):
             if self.tblLista.horizontalHeaderItem(i).text() == 'Elemento_Falla':
                 for j in range (0, len(self.tipo_instalacion)):
                     if str(self.tipo_instalacion[j][0]) == str(valor):
-                        #QMessageBox.information(None, '', str(self.tipo_instalacion[j][0]) + '  -  ' + str(valor))
                         self.cmbTipoInstalacion.setCurrentIndex(j)
 
             if self.tblLista.horizontalHeaderItem(i).text() == 'Zona_Falla':
@@ -295,9 +344,6 @@ class frmContingencias (DialogType, DialogBase):
                 if str(self.tipo_instalacion[i][0])[:3] == str(codigo):
                     self.cmbTipoInstalacion.setCurrentIndex(i)
 
-            #QMessageBox.information(None, 'codigo', str(codigo))
-            #QMessageBox.information(None, 'tipo_falla', str(tipo_falla))
-
             for i in range (0, len(self.cmbTipoInstalacion)):
                 if str(self.tipo_instalacion[i][0])[:3] == str(codigo) and str(self.tipo_instalacion[i][0])[-3:] == str(tipo_falla):
                     self.cmbTipoInstalacion.setCurrentIndex(i)
@@ -308,7 +354,7 @@ class frmContingencias (DialogType, DialogBase):
 
         #analizo que esten los elementos en el mapa
         cursor = cnn.cursor()
-        cursor.execute("SELECT DISTINCT nombre FROM Importo_Operaciones where incorporada=0 AND tipo_elemento<>'Usuario' AND nombre NOT IN (SELECT nombre FROM nodos WHERE elmt=2 OR elmt=3)")
+        cursor.execute("SELECT DISTINCT nombre FROM Importo_Operaciones where incorporada=0 AND tipo_elemento<>'Usuario' AND nombre NOT IN (SELECT nombre FROM nodos WHERE Nodos.Tension>0 AND elmt=2 OR elmt=3)")
         rst = tuple(cursor)
         cursor.close()
         for rs in rst:
@@ -382,15 +428,20 @@ class frmContingencias (DialogType, DialogBase):
                                 str_valores = str_valores + "99" + "," #codigo_usuario
                                 str_valores = str_valores + "0"
                                 cursor = cnn.cursor()
-                                cursor.execute("INSERT INTO Importo_Operaciones (nombre,tipo,fechahora,causa,contingencia,responsable,est_tiempo,observaciones,elemento_falla,zona_falla,tipo_zona_falla,tipo_elemento,incorporada,usuario,validada) VALUES (" + str_valores + ")")
-                                cnn.commit()
+                                try:
+                                    cursor.execute("INSERT INTO Importo_Operaciones (nombre,tipo,fechahora,causa,contingencia,responsable,est_tiempo,observaciones,elemento_falla,zona_falla,tipo_zona_falla,tipo_elemento,incorporada,usuario,validada) VALUES (" + str_valores + ")")
+                                    cnn.commit()
+                                except:
+                                    cnn.rollback()
+                                    QMessageBox.information(None, 'EnerGis 5', "No se pudieron insertar Contingencias !")
+                                pass
             else: #es un nuevo aparato
                 #me fijo si empieza con apertura o cierre
                 estado_inicial = rs[1]
                 if rs[3] == "Aparato Maniobra BT" or rs[3] == "Aparato Maniobra MT":
                     cursor = cnn.cursor()
                     QMessageBox.information(None, 'EnerGis 5', str(rs[3]))
-                    cursor.execute("SELECT elmt, estado FROM nodos WHERE nombre='" + rs[0])
+                    cursor.execute("SELECT elmt, estado FROM nodos WHERE Nodos.Tension>0 AND nombre='" + rs[0])
                     rst2 = tuple(cursor)
                     cursor.close()
                     if estado_inicial == 0 and rst2[0][0] == 2:
@@ -463,8 +514,13 @@ class frmContingencias (DialogType, DialogBase):
                                 str_valores = str_valores + "99" + "," #codigo_usuario
                                 str_valores = str_valores + "0"
                                 cursor = cnn.cursor()
-                                cursor.execute("INSERT INTO Importo_Operaciones (nombre,tipo,fechahora,causa,contingencia,responsable,est_tiempo,observaciones,elemento_falla,zona_falla,tipo_zona_falla,tipo_elemento,incorporada,usuario,validada) VALUES (" + str_valores + ")")
-                                cnn.commit()
+                                try:
+                                    cursor.execute("INSERT INTO Importo_Operaciones (nombre,tipo,fechahora,causa,contingencia,responsable,est_tiempo,observaciones,elemento_falla,zona_falla,tipo_zona_falla,tipo_elemento,incorporada,usuario,validada) VALUES (" + str_valores + ")")
+                                    cnn.commit()
+                                except:
+                                    cnn.rollback()
+                                    QMessageBox.information(None, 'EnerGis 5', "No se pudieron insertar Contingencias !")
+                                pass
                     return
 
             else: #es un nuevo usuario
@@ -498,58 +554,74 @@ class frmContingencias (DialogType, DialogBase):
     def importar(self):
         cnn = self.conn
         ult_rec = 0
-        cursor = cnn.cursor()
-        cursor.execute("SELECT orden_atencion, id_reclamo, nombre, tipo, causa, fechahora, responsable, est_tiempo, observaciones, elemento_falla, zona_falla, tipo_zona_falla, tipo_elemento FROM VW_GISCONTINGENCIAS ORDER BY nombre, fechahora")
-        rst = tuple(cursor)
-        cursor.close()
-        for rs in rst:
-            if rs[0] == 0:
-                ultimo_reclamo = rs[1]
-            else:
-                ultimo_reclamo = rs[0]
-
-            if ultimo_reclamo != ult_rec:
-                cnn = self.conn
-                cnn.autocommit = False
-                cursor = cnn.cursor()
-                cursor.execute("SELECT ult_cont FROM log_ope")
-                ult_cont = tuple(cursor)
-                self.ult_contingencia = ult_cont[0][0] + 1
-                cursor.execute("UPDATE ult_cont SET ult_cont =" + str(self.ult_contingencia))
-                cnn.commit()
-                ult_rec = ultimo_reclamo
-
-            str_valores = "'" + rs[2].replace(" ","") + "',"
-            str_valores = str_valores + rs[3] + ","
-            str_valores = str_valores + "'" + rs[4] + "',"
-            str_valores = str_valores + str(rs[5]) + ","
-            str_valores = str_valores + ult_cont + ","
-            str_valores = str_valores + "'" + rs[6] + "',"
-            str_valores = str_valores + "'" + rs[7] + "',"
-            str_valores = str_valores + "'" + rs[8] + "',"
-            str_valores = str_valores + str(rs[9]) + ","
-            str_valores = str_valores + "'" + rs[10] + "',"
-            str_valores = str_valores + "'" + rs[12] + "',"
-            str_valores = str_valores + "'" + rs[12] + "',"
-            str_valores = str_valores + "0,"
-            str_valores = str_valores + "99," #Codigo_Usuario
-            str_valores = str_valores + "0"
-
+        try:
             cursor = cnn.cursor()
-            cursor.execute("INSERT INTO Importo_Operaciones (nombre,tipo,fechahora,causa,contingencia,responsable,est_tiempo,observaciones,elemento_falla,zona_falla,tipo_zona_falla,tipo_elemento,incorporada,usuario,validada) VALUES (" + str_valores + ")")
-            cnn.commit()
+            cursor.execute("SELECT orden_atencion, id_reclamo, nombre, tipo, causa, fechahora, responsable, est_tiempo, observaciones, elemento_falla, zona_falla, tipo_zona_falla, tipo_elemento FROM VW_GISCONTINGENCIAS ORDER BY nombre, fechahora")
+            rst = tuple(cursor)
+            cursor.close()
+            for rs in rst:
+                if rs[0] == 0:
+                    ultimo_reclamo = rs[1]
+                else:
+                    ultimo_reclamo = rs[0]
 
-            if rs[0] == 0:
+                if ultimo_reclamo != ult_rec:
+                    cnn = self.conn
+                    cnn.autocommit = False
+                    cursor = cnn.cursor()
+                    cursor.execute("SELECT ult_cont FROM log_ope")
+                    ult_cont = tuple(cursor)
+                    self.ult_contingencia = ult_cont[0][0] + 1
+                    cursor.execute("UPDATE ult_cont SET ult_cont =" + str(self.ult_contingencia))
+                    cnn.commit()
+                    ult_rec = ultimo_reclamo
+
+                str_valores = "'" + rs[2].replace(" ","") + "',"
+                str_valores = str_valores + rs[3] + ","
+                str_valores = str_valores + "'" + rs[4] + "',"
+                str_valores = str_valores + str(rs[5]) + ","
+                str_valores = str_valores + ult_cont + ","
+                str_valores = str_valores + "'" + rs[6] + "',"
+                str_valores = str_valores + "'" + rs[7] + "',"
+                str_valores = str_valores + "'" + rs[8] + "',"
+                str_valores = str_valores + str(rs[9]) + ","
+                str_valores = str_valores + "'" + rs[10] + "',"
+                str_valores = str_valores + "'" + rs[12] + "',"
+                str_valores = str_valores + "'" + rs[12] + "',"
+                str_valores = str_valores + "0,"
+                str_valores = str_valores + "99," #Codigo_Usuario
+                str_valores = str_valores + "0"
+
                 cursor = cnn.cursor()
-                cursor.execute("INSERT INTO Reclamos_Contingencias (id_contingencia,id_reclamo) VALUES (" + ult_cont + "," + str(rs[1]) + ")")
-                cnn.commit()
+                try:
+                    cursor.execute("INSERT INTO Importo_Operaciones (nombre,tipo,fechahora,causa,contingencia,responsable,est_tiempo,observaciones,elemento_falla,zona_falla,tipo_zona_falla,tipo_elemento,incorporada,usuario,validada) VALUES (" + str_valores + ")")
+                    cnn.commit()
+                except:
+                    cnn.rollback()
+                    QMessageBox.information(None, 'EnerGis 5', "No se pudieron insertar Contingencias !")
+                pass
 
-            else:
-                cursor = cnn.cursor()
-                cursor.execute("INSERT INTO Reclamos_Contingencias SELECT " + self.ult_contingencia + " AS id_contingencia,id AS id_reclamo FROM VW_GISRECLAMOS INNER JOIN VW_GISCONTINGENCIAS ON VW_GISRECLAMOS.orden_atencion = VW_GISCONTINGENCIAS.orden_atencion WHERE VW_GISRECLAMOS.orden_atencion <> 0 AND VW_GISCONTINGENCIAS.orden_atencion = " + str(rs[0]))
-                cnn.commit()
-            self.lblContingencia.setText(ult_cont)
-
+                if rs[0] == 0:
+                    cursor = cnn.cursor()
+                    try:
+                        cursor.execute("INSERT INTO Reclamos_Contingencias (id_contingencia,id_reclamo) VALUES (" + ult_cont + "," + str(rs[1]) + ")")
+                        cnn.commit()
+                    except:
+                        cnn.rollback()
+                        QMessageBox.information(None, 'EnerGis 5', "No se pudieron insertar Reclamos !")
+                    pass
+                else:
+                    cursor = cnn.cursor()
+                    try:
+                        cursor.execute("INSERT INTO Reclamos_Contingencias SELECT " + self.ult_contingencia + " AS id_contingencia,id AS id_reclamo FROM VW_GISRECLAMOS INNER JOIN VW_GISCONTINGENCIAS ON VW_GISRECLAMOS.orden_atencion = VW_GISCONTINGENCIAS.orden_atencion WHERE VW_GISRECLAMOS.orden_atencion <> 0 AND VW_GISCONTINGENCIAS.orden_atencion = " + str(rs[0]))
+                        cnn.commit()
+                    except:
+                        cnn.rollback()
+                        QMessageBox.information(None, 'EnerGis 5', "No se pudieron insertar Reclamos !")
+                    pass
+                self.lblContingencia.setText(ult_cont)
+        except:
+            pass
     def nueva_contingencia(self):
         self.id_contingencia = self.ult_contingencia + 1
         self.lblContingencia.setText(str(self.id_contingencia))
@@ -567,7 +639,8 @@ class frmContingencias (DialogType, DialogBase):
         self.cmdBorrar.setEnabled(False)
         self.cmdCancelar.setEnabled(True)
         self.tblLista.setEnabled(False)
-        self.tblLista.selectRow(self.seleccionado)
+        if self.seleccionado!=-1:
+            self.tblLista.selectRow(self.seleccionado)
 
     def borrar(self):
         reply = QMessageBox.question(None, 'EnerGis 5', 'Desea borrar el evento ?', QMessageBox.Yes, QMessageBox.No)
@@ -582,7 +655,8 @@ class frmContingencias (DialogType, DialogBase):
         self.cmdBorrar.setEnabled(False)
         self.cmdGrabar.setEnabled(False)
         self.tblLista.setEnabled(True)
-        self.tblLista.selectRow(self.seleccionado)
+        if self.seleccionado!=-1:
+            self.tblLista.selectRow(self.seleccionado)
         pass
 
     def grabar(self):
@@ -645,7 +719,8 @@ class frmContingencias (DialogType, DialogBase):
         QMessageBox.information(None, 'EnerGis 5', 'Grabado !')
         self.cancelar()
         self.listar
-        self.tblLista.selectRow(self.seleccionado)
+        if self.seleccionado!=-1:
+            self.tblLista.selectRow(self.seleccionado)
         pass
 
     def lleno_grilla(self, encabezado, elementos):

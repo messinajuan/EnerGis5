@@ -20,10 +20,11 @@ DialogBase, DialogType = uic.loadUiType(os.path.join(os.path.dirname(__file__),'
 
 class frmPostes(DialogType, DialogBase):
         
-    def __init__(self, mapCanvas, conn, tension, geoname, elemento_asociado, geoname_asociado, zona):
+    def __init__(self, tipo_usuario, mapCanvas, conn, tension, geoname, elemento_asociado, geoname_asociado, zona):
         super().__init__()
         self.setupUi(self)
         self.setFixedSize(self.size())
+        self.tipo_usuario = tipo_usuario
         self.mapCanvas = mapCanvas
         self.conn = conn
         self.tension = tension
@@ -41,32 +42,13 @@ class frmPostes(DialogType, DialogBase):
         self.txtAltura.setValidator(vfloat)
         vint = QIntValidator()
         self.txtDescargadores.setValidator(vint)
-        self.inicio()
-        #QMessageBox.information(None, 'EnerGis 5', str(self.elemento_asociado))
-        #QMessageBox.information(None, 'EnerGis 5', str(self.geoname_asociado))
-        pass
 
-    def closeEvent(self, event):
-        n = self.mapCanvas.layerCount()
-        layers = [self.mapCanvas.layer(i) for i in range(n)]
-        for lyr in layers:
-            if lyr.name() == 'Nodos_Temp':
-                #QgsProject.instance().removeMapLayer(lyr)
-                #borra todos los objetos de la capa
-                if not lyr.isEditable():
-                    lyr.startEditing()
-                listOfIds = [feat.id() for feat in lyr.getFeatures()]
-                lyr.deleteFeatures(listOfIds)
-                lyr.commitChanges()
-                #----------------------------------
-            else:
-                lyr.triggerRepaint()
-        pass
-        
-    def inicio(self):
+        if self.tipo_usuario==4:
+            self.cmdNuevo.setEnabled(False)
+            self.cmdAceptar.setEnabled(False)
+
         cnn = self.conn
         cursor = cnn.cursor()
-        rows = []
         cursor.execute("SELECT id, descripcion FROM Estructuras")
         #convierto el cursor en array
         rows = tuple(cursor)
@@ -76,7 +58,6 @@ class frmPostes(DialogType, DialogBase):
             self.cmbEstructura.addItem(str(row[1]))
 
         cursor = cnn.cursor()
-        rows = []
         cursor.execute("SELECT id, descripcion, estilo FROM Elementos_Postes")
         #convierto el cursor en array
         rows = tuple(cursor)
@@ -99,7 +80,6 @@ class frmPostes(DialogType, DialogBase):
         self.cmbAislacion.addItem('Percha')
 
         cursor = cnn.cursor()
-        rows = []
         cursor.execute("SELECT id, descripcion FROM Riendas")
         #convierto el cursor en array
         rows = tuple(cursor)
@@ -121,11 +101,10 @@ class frmPostes(DialogType, DialogBase):
         self.cmbTernas.addItem('Alumbrado')
 
         cursor = cnn.cursor()
-        tensiones = []
-        cursor.execute("SELECT Tension FROM Niveles_Tension WHERE Tension>=200")
+        cursor.execute("SELECT Tension FROM Niveles_Tension WHERE Tension>=50")
         #convierto el cursor en array
         tensiones = tuple(cursor)
-        cursor.close()        
+        cursor.close()
 
         n = self.mapCanvas.layerCount()
         j = 0
@@ -138,21 +117,18 @@ class frmPostes(DialogType, DialogBase):
                         self.cmbCapa.addItem(str_tension)
                         if str_tension == str(self.tension):
                             j = self.cmbCapa.count() - 1
-        
+
         self.cmbCapa.setCurrentIndex(j)
         if self.geoname != 0:
             self.lblPoste.setText(str(self.geoname))
             cursor = cnn.cursor()
-            datos_poste = []
             cursor.execute("SELECT Estructura,Rienda,Altura,Nivel,Tension,Zona,Modificacion,tipo,Aislacion,Fundacion,Comparte,Ternas,PAT,Descargadores,elmt FROM Postes LEFT JOIN Elementos_Postes ON Postes.Elmt=Elementos_Postes.id WHERE Geoname=" + str(self.geoname))
             #convierto el cursor en array
             datos_poste = tuple(cursor)
             cursor.close()
-
             for i in range (0, len(self.arrEstructura)):
                 if datos_poste[0][0]==self.arrEstructura[i][0]:
                     self.cmbEstructura.setCurrentIndex(i)
-
             self.cmbRienda.setCurrentIndex(datos_poste[0][1])
             self.txtAltura.setText(str(datos_poste[0][2]))
             self.txtCota.setText(str(datos_poste[0][3]))
@@ -178,7 +154,6 @@ class frmPostes(DialogType, DialogBase):
             if datos_poste[0][12]==1:
                 self.chkPat.setChecked(True)
             self.txtDescargadores.setText(str(datos_poste[0][13]))
-
             for i in range (0, len(self.arrPoste)):
                 if datos_poste[0][14]==self.arrPoste[i][0]:
                     self.cmbPoste.setCurrentIndex(i)
@@ -188,7 +163,6 @@ class frmPostes(DialogType, DialogBase):
             if self.zona!=0:
                 cnn = self.conn
                 cursor = cnn.cursor()
-                self.rs = []
                 cursor.execute("SELECT Nombre FROM Areas WHERE geoname=" + str(self.zona))
                 #convierto el cursor en array
                 self.rs = tuple(cursor)
@@ -204,7 +178,24 @@ class frmPostes(DialogType, DialogBase):
         self.cmdAceptar.clicked.connect(self.aceptar)
         self.cmdSalir.clicked.connect(self.salir)
         pass
-        
+
+    def closeEvent(self, event):
+        n = self.mapCanvas.layerCount()
+        layers = [self.mapCanvas.layer(i) for i in range(n)]
+        for lyr in layers:
+            if lyr.name() == 'Nodos_Temp':
+                #QgsProject.instance().removeMapLayer(lyr)
+                #borra todos los objetos de la capa
+                if not lyr.isEditable():
+                    lyr.startEditing()
+                listOfIds = [feat.id() for feat in lyr.getFeatures()]
+                lyr.deleteFeatures(listOfIds)
+                lyr.commitChanges()
+                #----------------------------------
+            else:
+                lyr.triggerRepaint()
+        pass
+                
     def agregar(self):
         from .frm_abm_postes import frmAbmPostes
         dialogo = frmAbmPostes(self.conn)
@@ -313,8 +304,8 @@ class frmPostes(DialogType, DialogBase):
                     self.salir()
 
             except:
-                QMessageBox.information(None, 'EnerGis 5', 'Error al insertar el poste')
                 cnn.rollback()
+                QMessageBox.information(None, 'EnerGis 5', 'No se pudo insertar en la Base de Datos')
 
         else: #Si cambio algo -> UPDATE
 
@@ -356,9 +347,12 @@ class frmPostes(DialogType, DialogBase):
             else:
                 str_set = str_set + "pat=0, "
             str_set = str_set + "descargadores=" + self.txtDescargadores.text()
-            cursor.execute("UPDATE Postes SET " + str_set + " WHERE Geoname=" + str(self.geoname))
-            cnn.commit()
-            #QMessageBox.information(None, 'EnerGis 5', str_set)
+            try:
+                cursor.execute("UPDATE Postes SET " + str_set + " WHERE Geoname=" + str(self.geoname))
+                cnn.commit()
+            except:
+                cnn.rollback()
+                QMessageBox.information(None, 'EnerGis 5', 'No se pudo actualizar la Base de Datos')
         self.close()
         pass
 

@@ -12,7 +12,7 @@
 
 import os
 from PyQt5 import QtCore
-from PyQt5.QtCore import QDate
+from PyQt5.QtCore import QDate, QDateTime
 from PyQt5.QtWidgets import QMessageBox, QTableWidgetItem
 from PyQt5 import uic
 
@@ -27,15 +27,7 @@ class frmMoverTrafo(DialogType, DialogBase):
         self.conn = conn
         self.id = id
         self.ct = ct
-        self.inicio()
-        pass
 
-    def keyPressEvent(self, e):
-        if e.key() == QtCore.Qt.Key_Escape:
-            self.seleccionado = ""
-            self.close()
-
-    def inicio(self):
         self.cmbOrigen.addItem('Compras')
         self.cmbOrigen.addItem('Almacén')
         self.cmbOrigen.addItem('Reparación')
@@ -44,7 +36,24 @@ class frmMoverTrafo(DialogType, DialogBase):
         self.cmbDestino.addItem('Almacén')
         self.cmbDestino.addItem('Reparación')
         self.cmbDestino.addItem('Campo')
+
+        self.arrAlmacenes = []
+
+        cnn = self.conn
+        cursor = cnn.cursor()
+        cursor.execute("SELECT id_almacen, nombre FROM Almacenes")
+        #convierto el cursor en array
+        rows = tuple(cursor)
+        cursor.close()
+        for row in rows:
+            self.arrAlmacenes.append(row)
+            self.cmbAlmacen.addItem(str(row[1]))
+
+        self.cmbAlmacen.setVisible(False)
+
         self.fecha_movimiento = QDate.currentDate()
+        self.hora_movimiento = QDateTime.currentDateTime().toString("HH:mm:ss")
+
         self.datFecha.setDate(self.fecha_movimiento)
         self.tipo=0
         #1      Movimiento de alta
@@ -55,11 +64,12 @@ class frmMoverTrafo(DialogType, DialogBase):
         #1	Almacén
         #2	Reparación
         #3	Campo
+
+        self.cmdAceptar.clicked.connect(self.aceptar)
+        self.cmdSalir.clicked.connect(self.salir)
+
         cnn = self.conn
         cursor = cnn.cursor()
-
-        #QMessageBox.information(None, 'EnerGis 5', str(self.id))
-        #QMessageBox.information(None, 'EnerGis 5', str(self.ct))
 
         if self.ct != "": #movimientos en CT
             if self.id == 0: #busco un trafo en almacen
@@ -76,6 +86,7 @@ class frmMoverTrafo(DialogType, DialogBase):
                 self.cmbDestino.setCurrentIndex(1)
                 self.cmbOrigen.setEnabled(False)
                 self.cmbDestino.setEnabled(False)
+                self.cmbAlmacen.setVisible(True)
                 self.sql = "SELECT id_trafo, potencia, marca, n_chapa, tension_1, tension_2, conexionado FROM Transformadores WHERE id_ct='" + self.ct + "'"
                 self.tipo=2
                 self.desde=3
@@ -83,14 +94,18 @@ class frmMoverTrafo(DialogType, DialogBase):
         else: #FALTA PROGRAMAR
             return
             pass
+
         cursor.execute(self.sql)
         elementos = tuple(cursor)
         encabezado = [column[0] for column in cursor.description]
         cursor.close()
         self.lleno_grilla(encabezado, elementos)
-        self.cmdAceptar.clicked.connect(self.aceptar)
-        self.cmdSalir.clicked.connect(self.salir)
         pass
+
+    def keyPressEvent(self, e):
+        if e.key() == QtCore.Qt.Key_Escape:
+            self.seleccionado = ""
+            self.close()
 
     def lleno_grilla(self, encabezado, elementos):
         self.tblListado.setRowCount(0)
@@ -109,14 +124,16 @@ class frmMoverTrafo(DialogType, DialogBase):
         if self.id=='':
             return
 
-        #QMessageBox.information(None, 'EnerGis 5', str(self.id))
-        #QMessageBox.information(None, 'EnerGis 5', str(self.ct))
+        id_almacen=0
+        for i in range (0, len(self.arrAlmacenes)):
+            if self.cmbAlmacen.currentText()==self.arrAlmacenes[i][1]:
+                id_almacen=self.arrAlmacenes[i][0]
 
         reply = QMessageBox.question(None, 'EnerGis 5', '¿ Mover el trafo ?', QMessageBox.Yes, QMessageBox.No)
         if reply == QMessageBox.Yes:
             try:
                 cursor = cnn.cursor()
-                cursor.execute("INSERT INTO Movimiento_Transformadores (id_trafo,fecha,tipo_mov,mov_desde,mov_hasta,motivo_mov,observaciones) VALUES (" + self.id + ",'" + str(self.datFecha.date().toPyDate()).replace('-','') + "'," + str(self.tipo) + "," + str(self.desde) + "," + str(self.hasta) + ",'" + self.txtMotivo.text() + "','" + self.txtObservaciones.toPlainText() + "')")
+                cursor.execute("INSERT INTO Movimiento_Transformadores (id_trafo,fecha,tipo_mov,mov_desde,mov_hasta,motivo_mov,observaciones,id_almacen) VALUES (" + self.id + ",'" + str(self.datFecha.date().toPyDate()).replace('-','') + " " + self.hora_movimiento + "'," + str(self.tipo) + "," + str(self.desde) + "," + str(self.hasta) + ",'" + self.txtMotivo.text() + "','" + self.txtObservaciones.toPlainText() + "'," + str(id_almacen) + ")")
                 if self.hasta == 1:
                     cursor.execute("UPDATE Transformadores SET usado=1, id_ct='' WHERE id_trafo=" + self.id)
                 if self.hasta == 3:
@@ -124,7 +141,7 @@ class frmMoverTrafo(DialogType, DialogBase):
                 cnn.commit()
                 QMessageBox.information(None, 'EnerGis 5', "El Transformador se movió con éxito !")
             except:
-                QMessageBox.information(None, 'EnerGis 5', "INSERT INTO Movimiento_Transformadores (id_trafo,fecha,tipo_mov,mov_desde,mov_hasta,motivo_mov,observaciones) VALUES (" + self.id + ",'" + str(self.datFecha.date().toPyDate()).replace('-','') + "'," + str(self.tipo) + "," + str(self.desde) + "," + str(self.hasta) + ",'" + self.txtMotivo.text() + "','" + self.txtObservaciones.toPlainText() + "')")
+                #QMessageBox.information(None, 'EnerGis 5', "INSERT INTO Movimiento_Transformadores (id_trafo,fecha,tipo_mov,mov_desde,mov_hasta,motivo_mov,observaciones,id_almacen) VALUES (" + self.id + ",'" + str(self.datFecha.date().toPyDate()).replace('-','') + " " + self.hora_movimiento + "'," + str(self.tipo) + "," + str(self.desde) + "," + str(self.hasta) + ",'" + self.txtMotivo.text() + "','" + self.txtObservaciones.toPlainText() + "'," + str(id_almacen) + ")")
                 cnn.rollback()
                 QMessageBox.information(None, 'EnerGis 5', "No se pudo mover !")
                 return

@@ -34,7 +34,6 @@ class frmReasignarLineas(DialogType, DialogBase):
         self.cmbCapa.addItem('Todas')
         cnn = self.conn
         cursor = cnn.cursor()
-        tensiones = []
         cursor.execute("SELECT Tension FROM Niveles_Tension WHERE Tension>=200")
         #convierto el cursor en array
         tensiones = tuple(cursor)
@@ -52,7 +51,6 @@ class frmReasignarLineas(DialogType, DialogBase):
         self.cmbNuevoConductor.addItem('<No Modificar>')
 
         cursor = cnn.cursor()
-        rows = []
         cursor.execute("SELECT id, Descripcion FROM Elementos_Lineas")
         #convierto el cursor en array
         rows = tuple(cursor)
@@ -62,7 +60,6 @@ class frmReasignarLineas(DialogType, DialogBase):
             self.cmbNuevoConductor.addItem(row[1])
 
         cursor = cnn.cursor()
-        rows = []
         cursor.execute("SELECT DISTINCT id, Descripcion FROM Elementos_Lineas INNER JOIN Lineas ON Elementos_Lineas.id=Lineas.elmt WHERE geoname IN (" + self.inn + ")")
         #convierto el cursor en array
         rows = tuple(cursor)
@@ -146,7 +143,6 @@ class frmReasignarLineas(DialogType, DialogBase):
             elif self.cmbFase.currentText() == 'Monofásicas' or self.cmbFase.currentText() == '1' or self.cmbFase.currentText() == '2' or self.cmbFase.currentText() == '3':
                 self.where = self.where + " AND Fases=1"
 
-        #QMessageBox.information(None, 'EnerGis 5', tensiones)
         self.uucc = ""
         from .frm_elegir_uucc import frmElegirUUCC
         dialogo = frmElegirUUCC(self.conn, tensiones, self.where, self.uucc)
@@ -202,7 +198,7 @@ class frmReasignarLineas(DialogType, DialogBase):
         if self.cmbTernas.currentText() != '<No Modificar>':
             str_set = str_set + ", ternas='" + self.cmbTernas.currentText() + "'"
         if self.cmbEstado.currentText() != '<No Modificar>':
-            str_set = str_set + ", conservacion=" + self.cmbEstado.currentText() + "'"
+            str_set = str_set + ", conservacion='" + self.cmbEstado.currentText() + "'"
         if self.chkInstalacion.isChecked() == True:
             str_set = str_set + ", modificacion='" + str(self.datInstalacion.date().toPyDate()).replace('-','') + "'"
         if self.txtUUCC.text()!= "#":
@@ -211,12 +207,14 @@ class frmReasignarLineas(DialogType, DialogBase):
         reply = QMessageBox.question(None, 'EnerGis 5', 'Desea cambiar los datos de las líneas seleccionadas?', QMessageBox.Yes, QMessageBox.No)
         if reply == QMessageBox.No:
             return
-        #QMessageBox.information(None, 'EnerGis 5', str_set)
-        #QMessageBox.information(None, 'EnerGis 5', str_where)
         cnn = self.conn
         cursor = cnn.cursor()
-        cursor.execute("UPDATE Lineas SET " + str_set + " WHERE " + str_where)
-        cnn.commit()
+        try:
+            cursor.execute("UPDATE Lineas SET " + str_set + " WHERE " + str_where)
+            cnn.commit()
+        except:
+            cnn.rollback()
+            QMessageBox.information(None, 'EnerGis 5', 'No se pudo actualizar la Base de Datos')
         pass
 
     def salir(self):

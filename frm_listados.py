@@ -11,8 +11,11 @@
 #---------------------------------------------------------------------
 
 import os
+from PyQt5 import QtCore
 from PyQt5.QtWidgets import QMessageBox, QTableWidgetItem, QFileDialog
 from PyQt5 import uic
+from PyQt5.QtGui import QColor
+
 
 DialogBase, DialogType = uic.loadUiType(os.path.join(os.path.dirname(__file__),'frm_listados.ui'))
 
@@ -26,7 +29,6 @@ class frmListados(DialogType, DialogBase):
 
         cnn = self.conn
         cursor = cnn.cursor()
-        elementos = []
         cursor.execute(str_sql)
         #convierto el cursor en array
         elementos = tuple(cursor)
@@ -36,7 +38,7 @@ class frmListados(DialogType, DialogBase):
         self.lleno_grilla(encabezado, elementos)
         self.cmdExportar.clicked.connect(self.exportar)
         self.cmdSalir.clicked.connect(self.salir)
-        pass
+        self.tblListado.cellDoubleClicked.connect(self.ordenar)
 
     def lleno_grilla(self, encabezado, elementos):
         self.tblListado.setRowCount(0)
@@ -47,7 +49,14 @@ class frmListados(DialogType, DialogBase):
             for j in range (len(elementos[0])):
                 item = QTableWidgetItem(str(elementos[i][j]))
                 self.tblListado.setItem(i,j,item)
+
+                if str(elementos[i][j])=='None':
+                    self.tblListado.item(i, j).setBackground(QColor(225, 225, 100)) #100,100,150
+
         self.tblListado.setHorizontalHeaderLabels(encabezado)
+
+    def ordenar(self):
+        self.tblListado.sortItems(self.tblListado.currentColumn(), QtCore.Qt.AscendingOrder)
 
     def exportar(self):
         #pip install xlwt
@@ -56,7 +65,6 @@ class frmListados(DialogType, DialogBase):
             return
 
         filename = QFileDialog.getSaveFileName(self, 'Guardar Archivo', '', ".xls(*.xls)")
-        #QMessageBox.information(None, 'EnerGis 5', str(filename))
 
         if filename[0]=='' or filename[1]=='':
             return

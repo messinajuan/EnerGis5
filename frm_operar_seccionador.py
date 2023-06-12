@@ -14,6 +14,7 @@ import os
 from PyQt5.QtWidgets import QMessageBox
 from PyQt5 import uic
 from .mod_navegacion import nodos_por_salida
+from copy import deepcopy
 
 DialogBase, DialogType = uic.loadUiType(os.path.join(os.path.dirname(__file__),'frm_operar_seccionador.ui'))
 basepath = os.path.dirname(os.path.realpath(__file__))
@@ -102,12 +103,19 @@ class frmOperarSeccionador(DialogType, DialogBase):
 
         cnn = self.conn
         cursor = cnn.cursor()
-        cursor.execute('UPDATE Nodos SET elmt=' + str(self.elmt) + ', estado=' + str(self.estado) + ' WHERE geoname=' + str(self.geoname))
-        cnn.commit()
+        try:
+            cursor.execute('UPDATE Nodos SET elmt=' + str(self.elmt) + ', estado=' + str(self.estado) + ' WHERE geoname=' + str(self.geoname))
+            cnn.commit()
+        except:
+            cnn.rollback()
+            QMessageBox.information(None, 'EnerGis 5', 'No se pudo actualizar')
 
         if self.reconfiguro == True:
-            #QMessageBox.information(None, 'Mensaje', 'Reconfiguro')
+            self.mnodos_sal=deepcopy(self.mnodos)
+            self.mlineas_sal=deepcopy(self.mlineas)
+            nodos_por_salida(self, self.conn, self.mnodos_sal, self.mlineas_sal)
             nodos_por_salida(self, self.conn, self.mnodos, self.mlineas)
+            pass
 
         self.capa.triggerRepaint()
         self.salir()

@@ -20,11 +20,12 @@ DialogBase, DialogType = uic.loadUiType(os.path.join(os.path.dirname(__file__),'
 
 class frmAbmTransformadores(DialogType, DialogBase):
 
-    def __init__(self, conn, id):
+    def __init__(self, tipo_usuario, conn, id):
         super().__init__()
         self.setupUi(self)
         self.setFixedSize(self.size())
         #basepath = os.path.dirname(os.path.realpath(__file__))
+        self.tipo_usuario = tipo_usuario
         self.conn = conn
         self.id = id
         vint = QIntValidator()
@@ -33,10 +34,11 @@ class frmAbmTransformadores(DialogType, DialogBase):
         self.txtV1.setValidator(vfloat)
         self.txtV2.setValidator(vfloat)
         self.txtAnio.setValidator(vint)
-        self.inicio()
-        pass
 
-    def inicio(self):
+        if self.tipo_usuario==4:
+            self.groupBox.setTitle('Datos del Transformador')
+            self.cmdAceptar.setEnabled(False)
+
         self.cmbConexionado.addItem('M')
         self.cmbConexionado.addItem('B')
         self.cmbConexionado.addItem('Yy0')
@@ -50,12 +52,12 @@ class frmAbmTransformadores(DialogType, DialogBase):
         self.cmbTipo.addItem('Trifásico')
 
         self.txtTrafo.setText(str(self.id))
+        self.txtAceite.setText("0")
 
         cnn = self.conn
 
         if self.id!=0: #edit
             cursor = cnn.cursor()
-            datos_trafo = []
             cursor.execute("SELECT Potencia,Conexionado,Tension_1,Tension_2,Marca,N_chapa,Tipo,Anio_fabricacion,Obs,Prop_usuario,Kit,Cromatografia,Anomalia,Fecha_norm,Obs_pcb,Certificado,aceite FROM Transformadores WHERE id_trafo=" + str(self.id))
             #convierto el cursor en array
             datos_trafo = tuple(cursor)
@@ -123,18 +125,20 @@ class frmAbmTransformadores(DialogType, DialogBase):
         if self.txtPotencia.text() == "":
             QMessageBox.information(None, 'EnerGis 5', "Debe ingresar una potencia")
             return
+        if self.txtAceite.text() == "":
+            self.txtAceite.setText("0")
 
         if self.id==0: #Nuevo
             reply = QMessageBox.question(None, 'EnerGis 5', '¿ Guardar los datos ?', QMessageBox.Yes, QMessageBox.No)
             if reply == QMessageBox.Yes:
                 cursor = cnn.cursor()
-                cursor.execute("SELECT MAX(id) FROM Transformadores")
+                cursor.execute("SELECT MAX(Id_Trafo) FROM Transformadores")
                 rows = cursor.fetchall()
                 cursor.close()
                 id = rows[0][0] + 1
                 try:
                     cursor = cnn.cursor()
-                    cursor.execute("INSERT INTO Transformadores (Id,Potencia,Conexionado,Marca,N_chapa,Tension_1,Tension_2,Tipo,Anio_fabricacion,Obs,Kit,Cromatografia,Anomalia,Fecha_norm,Certificado,Obs_pcb,aceite,Prop_usuario) VALUES (" + str(id) + "," + self.txtPotencia.text() + ",'" + self.cmbConexionado.currentText() + "','" + self.txtMarca.text() + "','" + self.txtNroChapa.text() + "'," + self.txtV1.text() + "," + self.txtV2.text() + "," + str(tipo) + ",'" + self.txtAnio.text() + "','" + self.txtObservaciones.toPlainText() + "','" + self.txtKit.currentText() + "','" + self.txtCromatografia.currentText() + "','" + self.txtAnomalia.currentText() + "','" + str(self.datNormalizacion.date().toPyDate()).replace('-','') + "'," + str(certificado) + ",'" + self.txtObservacionesPCB.currentText() + "'," + self.txtAceite.currentText() + "," + str(prop_usuario))
+                    cursor.execute("INSERT INTO Transformadores (Id_Trafo,Potencia,Conexionado,Marca,N_chapa,Tension_1,Tension_2,Tipo,Anio_fabricacion,Obs,Kit,Cromatografia,Anomalia,Fecha_norm,Certificado,Obs_pcb,aceite,Prop_usuario) VALUES (" + str(id) + "," + self.txtPotencia.text() + ",'" + self.cmbConexionado.currentText() + "','" + self.txtMarca.text() + "','" + self.txtNroChapa.text() + "'," + self.txtV1.text() + "," + self.txtV2.text() + "," + str(tipo) + ",'" + self.txtAnio.text() + "','" + self.txtObservaciones.toPlainText() + "','" + self.txtKit.text() + "','" + self.txtCromatografia.text() + "','" + self.txtAnomalia.text() + "','" + str(self.datNormalizacion.date().toPyDate()).replace('-','') + "'," + str(certificado) + ",'" + self.txtObservacionesPCB.text() + "'," + self.txtAceite.text() + "," + str(prop_usuario) + ")")
                     cnn.commit()
                     QMessageBox.information(None, 'EnerGis 5', "Transformador agregado !")
                 except:
@@ -169,25 +173,21 @@ class frmAbmTransformadores(DialogType, DialogBase):
                     cnn.commit()
                     QMessageBox.information(None, 'EnerGis 5', "Actualizado !")
                 except:
-                    QMessageBox.information(None, 'EnerGis 5', "UPDATE Transformadores SET " + str_set + " WHERE id_trafo=" + self.txtTrafo.text())
                     cnn.rollback()
                     QMessageBox.information(None, 'EnerGis 5', "No se pudo actualizar !")
                     return
 
-            cnn.commit()
+
         self.close()
         pass
 
     def parametros(self):
+        if self.id==0:
+            self.aceptar()
+        if self.id==0:
+            return
         from .frm_parametros_trafo import frmParametrosTrafo
-        dialogo = frmParametrosTrafo(self.conn, self.id, float(self.txtPotencia.text()))
-        dialogo.exec()
-        dialogo.close()
-        pass
-
-    def taps(self):
-        from .frm_taps import frmTaps
-        dialogo = frmTaps(self.conn, self.id)
+        dialogo = frmParametrosTrafo(self.tipo_usuario, self.conn, self.id, float(self.txtPotencia.text()))
         dialogo.exec()
         dialogo.close()
         pass

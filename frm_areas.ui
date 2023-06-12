@@ -54,6 +54,9 @@
    <property name="text">
     <string>Aceptar</string>
    </property>
+   <property name="shortcut">
+    <string>Return</string>
+   </property>
   </widget>
   <widget class="QComboBox" name="cmbLocalidad">
    <property name="geometry">
@@ -112,6 +115,9 @@
    </property>
    <property name="text">
     <string>Salir</string>
+   </property>
+   <property name="shortcut">
+    <string>Esc</string>
    </property>
   </widget>
   <widget class="QLineEdit" name="txtBarrio">

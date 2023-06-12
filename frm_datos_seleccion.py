@@ -18,13 +18,14 @@ DialogBase, DialogType = uic.loadUiType(os.path.join(os.path.dirname(__file__),'
 
 class frmDatosSeleccion(DialogType, DialogBase):
 
-    def __init__(self, mapCanvas, conn):
+    def __init__(self, tipo_usuario, mapCanvas, conn):
         super().__init__()
         self.setupUi(self)
 
         #self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
 
         #self.setFixedSize(self.size())
+        self.tipo_usuario = tipo_usuario
         self.mapCanvas = mapCanvas
         self.conn = conn
         self.ftrs_nodos=[]
@@ -93,7 +94,6 @@ class frmDatosSeleccion(DialogType, DialogBase):
 
         cnn = self.conn
         #cursor = cnn.cursor()
-        #elementos_nodos = []
         #cursor.execute("SELECT id, Descripcion FROM Elementos_Nodos")
         #convierto el cursor en array
         #elementos_nodos = tuple(cursor)
@@ -105,8 +105,7 @@ class frmDatosSeleccion(DialogType, DialogBase):
             self.str_lista_nodos=self.str_lista_nodos + ',' + str(ftr)
 
         cursor = cnn.cursor()
-        recordset = []
-        cursor.execute("SELECT Sum(CAST([Val1] AS DECIMAL(8,2))) As kVA, Count(Nodos.Geoname) As Cant FROM Nodos WHERE Nodos.Elmt=4 AND Geoname IN (" + self.str_lista_nodos + ")")
+        cursor.execute("SELECT Sum(CAST((CASE Val1 WHEN NULL THEN '0' WHEN '' THEN '0' ELSE Val1 END) AS DECIMAL(8,2))) As kVA, Count(Nodos.Geoname) As Cant FROM Nodos WHERE Nodos.Elmt=4 AND Geoname IN (" + self.str_lista_nodos + ")")
         #convierto el cursor en array
         recordset = tuple(cursor)
         cursor.close()
@@ -115,7 +114,6 @@ class frmDatosSeleccion(DialogType, DialogBase):
         self.txtPotenciaInstalada.setText(str(recordset[0][0]))
 
         cursor = cnn.cursor()
-        recordset = []
         cursor.execute("SELECT Count(Usuarios.id_usuario) As Cant FROM Suministros INNER JOIN Usuarios ON Suministros.id_suministro = Usuarios.id_suministro WHERE ES=1 AND Suministros.id_nodo IN (" + self.str_lista_nodos + ")")
         #convierto el cursor en array
         recordset = tuple(cursor)
@@ -124,7 +122,6 @@ class frmDatosSeleccion(DialogType, DialogBase):
         self.txtUsuarios.setText(str(recordset[0][0]))
 
         cursor = cnn.cursor()
-        recordset = []
         cursor.execute("SELECT Min(Energia_Facturada.Desde) As Desde, Max(Energia_Facturada.Hasta) As Hasta FROM Suministros INNER JOIN Usuarios ON Suministros.id_suministro = Usuarios.id_suministro INNER JOIN Energia_Facturada ON Usuarios.id_usuario = Energia_Facturada.id_usuario WHERE Suministros.id_nodo IN (" + self.str_lista_nodos + ")")
         #convierto el cursor en array
         recordset = tuple(cursor)
@@ -149,6 +146,9 @@ class frmDatosSeleccion(DialogType, DialogBase):
         #"SELECT SUM(CAST(LEFT(RIGHT([mediciones].[nombre],LEN([mediciones].[nombre])-2),LEN([mediciones].[nombre])-5) AS DECIMAL(8,2))) FROM Nodos_Temp_" & Codigo_Usuario & " INNER JOIN mediciones ON Nodos_Temp_" & Codigo_Usuario & ".Geoname = mediciones.Geoname WHERE (((Right([mediciones].[Nombre],3))='kVA') AND ((Left([mediciones].[Nombre],2))='SC'));"
         #------------- FIN ANALISIS DE CARGA -------------
 
+        if self.tipo_usuario==4:
+            self.cmdActualizarDatos.setEnabled(False)
+
         self.cmdActualizarDatos.clicked.connect(self.actualizar_datos)
         self.cmdExportar.clicked.connect(self.exportar)
         self.cmdSalir.clicked.connect(self.salir)
@@ -171,7 +171,6 @@ class frmDatosSeleccion(DialogType, DialogBase):
         if item.data(1,QtCore.Qt.DisplayRole)!='0':
 
             #------------------------ NODOS --------------------------
-
             if str(item.data(0,QtCore.Qt.DisplayRole))=='Nodos':
                 str_lista='0'
                 for ftr in self.ftrs_nodos:
@@ -179,11 +178,14 @@ class frmDatosSeleccion(DialogType, DialogBase):
                     str_lista=str_lista + ',' + str(ftr)
                 try:
                     cursor.execute('DROP TABLE #Nodos')
+                    cnn.commit()
                 except:
-                    pass
-                #QMessageBox.information(None, 'EnerGis 5', str_lista)
-                cursor.execute("SELECT geoname, nombre, Nodos.descripcion, CASE WHEN LEFT(Elementos_Nodos.Descripcion,14) = 'Elemento Corte' THEN 'Elemento Corte' ELSE ISNULL(Elementos_Nodos.Descripcion, 'Nodo Simple') END AS elemento, tension, zona, alimentador, uucc INTO #Nodos FROM Nodos LEFT JOIN Elementos_Nodos ON Nodos.elmt=Elementos_Nodos.id WHERE geoname IN (" + str_lista + ")")
-                cursor.commit()
+                    cnn.rollback()
+                try:
+                    cursor.execute("SELECT geoname, nombre, Nodos.descripcion, CASE WHEN LEFT(Elementos_Nodos.Descripcion,14) = 'Elemento Corte' THEN 'Elemento Corte' ELSE ISNULL(Elementos_Nodos.Descripcion, 'Nodo Simple') END AS elemento, tension, zona, alimentador, uucc INTO #Nodos FROM Nodos LEFT JOIN Elementos_Nodos ON Nodos.elmt=Elementos_Nodos.id WHERE geoname IN (" + str_lista + ")")
+                    cnn.commit()
+                except:
+                    cnn.rollback()
 
                 if item.childCount()==0:
                     cursor.execute('SELECT Elemento, count(*) FROM #Nodos GROUP BY Elemento')
@@ -302,8 +304,12 @@ class frmDatosSeleccion(DialogType, DialogBase):
                 except:
                     pass
                 #QMessageBox.information(None, 'EnerGis 5', str_lista)
-                cursor.execute("SELECT geoname, fase, descripcion, longitud, tension, zona, alimentador, disposicion, conservacion, ternas, acometida, uucc INTO #Lineas FROM Lineas INNER JOIN Elementos_Lineas ON Lineas.elmt=Elementos_Lineas.id WHERE geoname IN (" + str_lista + ")")
-                cursor.commit()
+                try:
+                    cursor.execute("SELECT geoname, fase, descripcion, longitud, tension, zona, alimentador, disposicion, conservacion, ternas, acometida, uucc INTO #Lineas FROM Lineas INNER JOIN Elementos_Lineas ON Lineas.elmt=Elementos_Lineas.id WHERE geoname IN (" + str_lista + ")")
+                    cnn.commit()
+                except:
+                    cnn.rollback()
+                pass
 
                 if item.childCount()==0:
                     cursor.execute("SELECT tension, count(*) FROM #Lineas GROUP BY tension")
@@ -331,9 +337,7 @@ class frmDatosSeleccion(DialogType, DialogBase):
                 self.lleno_grilla(encabezado, elementos)
                 return
 
-
             #------------------------ POSTES --------------------------
-
 
             #QMessageBox.information(None, 'EnerGis 5', str(item.data(0,QtCore.Qt.DisplayRole)))
 
@@ -346,8 +350,11 @@ class frmDatosSeleccion(DialogType, DialogBase):
                 except:
                     pass
 
-                cursor.execute("SELECT geoname, elementos_postes.descripcion as montaje, altura, estructuras.descripcion as estructura, tipo, ternas, aislacion, tension, zona INTO #Postes FROM Postes INNER JOIN Elementos_Postes ON Postes.elmt=Elementos_Postes.id INNER JOIN Estructuras ON Postes.Estructura = Estructuras.id WHERE geoname IN (" + str_lista + ")")
-                cursor.commit()
+                try:
+                    cursor.execute("SELECT geoname, elementos_postes.descripcion as montaje, altura, estructuras.descripcion as estructura, tipo, ternas, aislacion, tension, zona INTO #Postes FROM Postes INNER JOIN Elementos_Postes ON Postes.elmt=Elementos_Postes.id INNER JOIN Estructuras ON Postes.Estructura = Estructuras.id WHERE geoname IN (" + str_lista + ")")
+                    cnn.commit()
+                except:
+                    cnn.rollback()
                 #QMessageBox.information(None, 'EnerGis 5', str_lista)
                 if item.childCount()==0:
                     cursor.execute("SELECT tension, count(*) FROM #Postes GROUP BY tension")
@@ -377,9 +384,7 @@ class frmDatosSeleccion(DialogType, DialogBase):
                 self.lleno_grilla(encabezado, elementos)
                 return
 
-
             #------------------------ PARCELAS --------------------------
-
 
             #QMessageBox.information(None, 'EnerGis 5', str(item.data(0,QtCore.Qt.DisplayRole)))
 
@@ -393,8 +398,11 @@ class frmDatosSeleccion(DialogType, DialogBase):
                 except:
                     pass
 
-                cursor.execute("SELECT geoname,parcela,manzana,chacra,quinta,seccion,circunscripcion,zona INTO #Parcelas FROM Parcelas WHERE geoname IN (" + str_lista + ")")
-                cursor.commit()
+                try:
+                    cursor.execute("SELECT geoname,parcela,manzana,chacra,quinta,seccion,circunscripcion,zona INTO #Parcelas FROM Parcelas WHERE geoname IN (" + str_lista + ")")
+                    cnn.commit()
+                except:
+                    cnn.rollback()
 
                 cursor = cnn.cursor()
                 cursor.execute("SELECT * FROM #Parcelas")
@@ -411,7 +419,6 @@ class frmDatosSeleccion(DialogType, DialogBase):
 
         cnn = self.conn
         cursor = cnn.cursor()
-        recordset = []
         cursor.execute("SELECT SUM(EtF) AS EtF FROM Suministros INNER JOIN Usuarios ON Suministros.id_suministro = Usuarios.id_suministro INNER JOIN Energia_Facturada ON Usuarios.id_usuario = Energia_Facturada.id_usuario WHERE Suministros.id_nodo IN (" + self.str_lista_nodos + ") AND Energia_Facturada.Desde>='" + fecha_desde + "' AND Energia_Facturada.Hasta<='" + fecha_hasta + "'")
         #convierto el cursor en array
         recordset = tuple(cursor)

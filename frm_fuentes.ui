@@ -99,6 +99,9 @@
    <property name="text">
     <string>Aceptar</string>
    </property>
+   <property name="shortcut">
+    <string>Return</string>
+   </property>
   </widget>
   <widget class="QPushButton" name="cmdSalir">
    <property name="geometry">
@@ -111,6 +114,9 @@
    </property>
    <property name="text">
     <string>Salir</string>
+   </property>
+   <property name="shortcut">
+    <string>Esc</string>
    </property>
   </widget>
   <widget class="QLabel" name="label_4">
@@ -150,6 +156,9 @@
    </property>
   </widget>
   <widget class="QRadioButton" name="rbtPuntoCompra">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="geometry">
     <rect>
      <x>40</x>
@@ -163,6 +172,9 @@
    </property>
   </widget>
   <widget class="QRadioButton" name="rbtGeneracion">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="geometry">
     <rect>
      <x>170</x>
@@ -225,6 +237,35 @@
    </property>
    <property name="text">
     <string>Expediente Obra</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="txtPotencia">
+   <property name="geometry">
+    <rect>
+     <x>200</x>
+     <y>100</y>
+     <width>71</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="inputMethodHints">
+    <set>Qt::ImhFormattedNumbersOnly</set>
+   </property>
+   <property name="text">
+    <string>0</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_10">
+   <property name="geometry">
+    <rect>
+     <x>140</x>
+     <y>100</y>
+     <width>60</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Potencia</string>
    </property>
   </widget>
  </widget>

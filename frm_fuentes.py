@@ -11,7 +11,7 @@
 #---------------------------------------------------------------------
 
 import os
-#from PyQt5.QtWidgets import QMessageBox
+from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtGui import QDoubleValidator
 from PyQt5 import uic
 
@@ -19,20 +19,21 @@ DialogBase, DialogType = uic.loadUiType(os.path.join(os.path.dirname(__file__),'
 
 class frmFuentes(DialogType, DialogBase):
         
-    def __init__(self, conn, geoname):
+    def __init__(self, tipo_usuario, conn, geoname):
         super().__init__()
         self.setupUi(self)
         self.setFixedSize(self.size())
+        self.tipo_usuario = tipo_usuario
         self.conn = conn
         self.geoname = geoname
         vfloat = QDoubleValidator()
         self.txtVpu.setValidator(vfloat)
         self.txtAngulo.setValidator(vfloat)
         self.txtScc.setValidator(vfloat)
-        self.inicio()        
-        pass
 
-    def inicio(self):
+        if self.tipo_usuario==4:
+            self.cmdAceptar.setEnabled(False)
+
         self.cmbTipo.addItem('Combustión Interna')
         self.cmbTipo.addItem('Eólica')
         self.cmbTipo.addItem('Hidroeléctrica')
@@ -50,8 +51,7 @@ class frmFuentes(DialogType, DialogBase):
         if self.geoname!=0:
             cnn = self.conn
             cursor = cnn.cursor()
-            fuente = []
-            cursor.execute("SELECT ISNULL(Descripcion, ''), Val1, Val2, Val3, Val4 FROM Nodos WHERE geoname=" + str(self.geoname))
+            cursor.execute("SELECT ISNULL(Descripcion, ''), Val1, Val2, Val3, Val4, Val5 FROM Nodos WHERE Nodos.Tension>0 AND geoname=" + str(self.geoname))
             #convierto el cursor en array
             fuente = tuple(cursor)
             cursor.close()
@@ -68,14 +68,17 @@ class frmFuentes(DialogType, DialogBase):
             if tipo_fuente=='0':
                 self.rbtPuntoCompra.setChecked(True)
 
-            if len (str_matriz)==3:
+            if len(str_matriz)>=3:
                 self.txtExpediente.setText(str_matriz[1])
-                tipo_generacion = str_matriz[2]
-                if tipo_generacion!='':
-                    for i in range (0, self.cmbTipo.count()):
-                        if self.cmbTipo.itemText(i) == tipo_generacion:
-                            self.cmbTipo.setCurrentIndex(i)
+                self.txtPotencia.setText(str_matriz[2])
                 self.txtScc.setText(str_matriz[3])
+
+            tipo_generacion = fuente[0][5]
+            #QMessageBox.information(None, 'EnerGis 5', str(tipo_generacion))
+            if tipo_generacion!='':
+                for i in range (0, self.cmbTipo.count()):
+                    if self.cmbTipo.itemText(i) == tipo_generacion:
+                        self.cmbTipo.setCurrentIndex(i)
 
         self.cmdAceptar.clicked.connect(self.aceptar)
         self.cmdSalir.clicked.connect(self.salir)
@@ -90,13 +93,24 @@ class frmFuentes(DialogType, DialogBase):
 
         str_set = "Descripcion='" + self.txtSSEE.text() + "', "
 
-        str_set = str_set + "Val1=Tension, "
+        str_set = str_set + "Val1=CAST(Tension AS VARCHAR(50)), "
         str_set = str_set + "Val2='" + self.txtVpu.text() + "', "
         str_set = str_set + "Val3='" + self.txtAngulo.text() + "', "
-        str_set = str_set + "Val4='" + self.txtScc.text() + "'"
 
-        cursor.execute("UPDATE Nodos SET " + str_set + " WHERE Geoname=" + str(self.geoname))
-        cnn.commit()
+        #opcion-Expediente-Potencia-Vmax-Qmax-Qmin-Scc-Xd-Xd"
+        if self.rbtGeneracion.isChecked()==True:
+            tipo_fuente='1'
+        else:
+            tipo_fuente='0'
+        str_set = str_set + "Val4='" + tipo_fuente + "-" + self.txtExpediente.text() + "-" + self.txtPotencia.text() + "-0-0-0-" + self.txtScc.text() + "-0-0', "
+        str_set = str_set + "Val5='" + self.cmbTipo.currentText() + "'"
+
+        try:
+            cursor.execute("UPDATE Nodos SET " + str_set + " WHERE Geoname=" + str(self.geoname))
+            cnn.commit()
+        except:
+            cnn.rollback()
+            QMessageBox.information(None, 'EnerGis 5', 'No se pudo actualizar')
         #QMessageBox.information(None, 'EnerGis 5', str_set)
         self.close()
         pass

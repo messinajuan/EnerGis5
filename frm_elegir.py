@@ -26,18 +26,11 @@ class frmElegir(DialogType, DialogBase):
         #self.setFixedSize(self.size())
         self.conn = conn
         self.sql = sql
-        self.inicio()
-        pass
 
-    def keyPressEvent(self, e):
-        if e.key() == QtCore.Qt.Key_Escape:
-            self.seleccionado = ""
-            self.close()
-        
-    def inicio(self):
+        self.seleccionado = ""
+
         cnn = self.conn
         cursor = cnn.cursor()
-        recordset = []
         cursor.execute(self.sql)
         #convierto el cursor en array
         recordset = tuple(cursor)
@@ -57,6 +50,11 @@ class frmElegir(DialogType, DialogBase):
         self.cmdAceptar.clicked.connect(self.aceptar)
         self.cmdSalir.clicked.connect(self.salir)
         pass
+
+    def keyPressEvent(self, e):
+        if e.key() == QtCore.Qt.Key_Escape:
+            self.seleccionado = ""
+            self.close()
 
     def aceptar(self):
         self.seleccionado = self.tblListado.item(self.tblListado.currentRow(),0).text()

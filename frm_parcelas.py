@@ -11,47 +11,26 @@
 #---------------------------------------------------------------------
 
 import os
-#from PyQt5.QtWidgets import QMessageBox
+from PyQt5.QtWidgets import QMessageBox
 from PyQt5 import uic
 
 DialogBase, DialogType = uic.loadUiType(os.path.join(os.path.dirname(__file__),'frm_parcelas.ui'))
 
 class frmParcelas(DialogType, DialogBase):
 
-    def __init__(self, mapCanvas, conn, obj, geoname):
+    def __init__(self, tipo_usuario, mapCanvas, conn, obj, geoname):
         super().__init__()
         self.setupUi(self)
         self.setFixedSize(self.size())
+        self.tipo_usuario = tipo_usuario
         self.mapCanvas = mapCanvas
         self.conn = conn
         self.obj = obj
         self.geoname = geoname
-        self.inicio()
-        pass
-
-    def closeEvent(self, event):
-        n = self.mapCanvas.layerCount()
-        layers = [self.mapCanvas.layer(i) for i in range(n)]
-        for lyr in layers:
-            if lyr.name() == 'Aeeas_Temp':
-                #borra todos los objetos de la capa
-                if not lyr.isEditable():
-                    lyr.startEditing()
-                listOfIds = [feat.id() for feat in lyr.getFeatures()]
-                lyr.deleteFeatures(listOfIds)
-                lyr.commitChanges()
-                #----------------------------------
-            else:
-                lyr.triggerRepaint()
-        pass
-        
-    def inicio(self):
-        #QMessageBox.information(None, 'EnerGis 5', 'Inicio')
 
         if self.geoname != 0:
             cnn = self.conn
             cursor = cnn.cursor()
-            parcelas = []
             cursor.execute("SELECT Parcela, Manzana, Chacra, Quinta, Circunscripcion, Seccion FROM Parcelas WHERE geoname=" + str(self.geoname))
             #convierto el cursor en array
             parcelas = tuple(cursor)
@@ -68,6 +47,22 @@ class frmParcelas(DialogType, DialogBase):
         self.cmdAceptar.clicked.connect(self.aceptar)
         self.cmdSalir.clicked.connect(self.salir)
 
+        pass
+
+    def closeEvent(self, event):
+        n = self.mapCanvas.layerCount()
+        layers = [self.mapCanvas.layer(i) for i in range(n)]
+        for lyr in layers:
+            if lyr.name() == 'Aeeas_Temp':
+                #borra todos los objetos de la capa
+                if not lyr.isEditable():
+                    lyr.startEditing()
+                listOfIds = [feat.id() for feat in lyr.getFeatures()]
+                lyr.deleteFeatures(listOfIds)
+                lyr.commitChanges()
+                #----------------------------------
+            else:
+                lyr.triggerRepaint()
         pass
 
     def aceptar(self):
@@ -101,10 +96,13 @@ class frmParcelas(DialogType, DialogBase):
             str_valores = str_valores + obj
 
             #QMessageBox.information(None, 'EnerGis 5', str_valores)
-
-            cursor = cnn.cursor()
-            cursor.execute("INSERT INTO Parcelas (Geoname, Parcela, Manzana, Chacra, Quinta, Circunscripcion, Seccion, obj) VALUES (" + str_valores + ")")
-            cnn.commit()
+            try:
+                cursor = cnn.cursor()
+                cursor.execute("INSERT INTO Parcelas (Geoname, Parcela, Manzana, Chacra, Quinta, Circunscripcion, Seccion, obj) VALUES (" + str_valores + ")")
+                cnn.commit()
+            except:
+                cnn.rollback()
+                QMessageBox.information(None, 'EnerGis 5', 'No se pudo insertar en la Base de Datos')
 
         else: #Si cambio algo -> UPDATE
             cnn = self.conn
@@ -115,9 +113,12 @@ class frmParcelas(DialogType, DialogBase):
             str_set = str_set + "Quinta='" + self.txtQuinta.text() + "', "
             str_set = str_set + "Circunscripcion='" + self.txtCircunscripcion.text() + "', "
             str_set = str_set + "Seccion='" + self.txtSeccion.text() + "'"
-
-            cursor.execute("UPDATE Parcelas SET " + str_set + " WHERE Geoname=" + str(self.geoname))
-            cnn.commit()
+            try:
+                cursor.execute("UPDATE Parcelas SET " + str_set + " WHERE Geoname=" + str(self.geoname))
+                cnn.commit()
+            except:
+                cnn.rollback()
+                QMessageBox.information(None, 'EnerGis 5', 'No se pudo actualizar la Base de Datos')
 
         self.close()
         pass

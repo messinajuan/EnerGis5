@@ -28,6 +28,9 @@
      <height>22</height>
     </rect>
    </property>
+   <property name="editable">
+    <bool>true</bool>
+   </property>
   </widget>
   <widget class="QLabel" name="lbl_parametro1">
    <property name="geometry">
@@ -80,6 +83,12 @@
    <property name="text">
     <string>Aceptar</string>
    </property>
+   <property name="shortcut">
+    <string>Return</string>
+   </property>
+   <property name="checkable">
+    <bool>false</bool>
+   </property>
   </widget>
   <widget class="QPushButton" name="cmdSalir">
    <property name="geometry">
@@ -92,6 +101,9 @@
    </property>
    <property name="text">
     <string>Salir</string>
+   </property>
+   <property name="shortcut">
+    <string>Esc</string>
    </property>
   </widget>
   <widget class="QLabel" name="label_11">
@@ -204,6 +216,9 @@
      <height>22</height>
     </rect>
    </property>
+   <property name="editable">
+    <bool>true</bool>
+   </property>
   </widget>
   <widget class="QComboBox" name="cmbParametro3">
    <property name="geometry">
@@ -213,6 +228,9 @@
      <width>140</width>
      <height>22</height>
     </rect>
+   </property>
+   <property name="editable">
+    <bool>true</bool>
    </property>
   </widget>
   <widget class="QComboBox" name="cmbCorriente">

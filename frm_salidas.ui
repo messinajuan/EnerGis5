@@ -67,6 +67,9 @@
    <property name="text">
     <string>Aceptar</string>
    </property>
+   <property name="shortcut">
+    <string>Return</string>
+   </property>
   </widget>
   <widget class="QPushButton" name="cmdSalir">
    <property name="geometry">
@@ -79,6 +82,9 @@
    </property>
    <property name="text">
     <string>Salir</string>
+   </property>
+   <property name="shortcut">
+    <string>Esc</string>
    </property>
   </widget>
   <widget class="QLabel" name="label_11">
@@ -154,6 +160,12 @@
      <width>118</width>
      <height>3</height>
     </rect>
+   </property>
+   <property name="autoFillBackground">
+    <bool>false</bool>
+   </property>
+   <property name="styleSheet">
+    <string notr="true"/>
    </property>
    <property name="frameShadow">
     <enum>QFrame::Plain</enum>

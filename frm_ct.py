@@ -11,7 +11,7 @@
 #---------------------------------------------------------------------
 
 import os
-#from PyQt5.QtWidgets import QMessageBox
+from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtGui import QIntValidator
 from PyQt5 import uic
 
@@ -19,10 +19,11 @@ DialogBase, DialogType = uic.loadUiType(os.path.join(os.path.dirname(__file__),'
 
 class frmCT(DialogType, DialogBase):
         
-    def __init__(self, conn, tension, geoname, nombre):
+    def __init__(self, tipo_usuario, conn, tension, geoname, nombre):
         super().__init__()
         self.setupUi(self)
         self.setFixedSize(self.size())
+        self.tipo_usuario = tipo_usuario
         self.conn = conn
         self.tension = tension
         self.geoname = geoname
@@ -37,10 +38,10 @@ class frmCT(DialogType, DialogBase):
         self.txtcasies.setValidator(vint)
         self.txtcases.setValidator(vint)
         self.txtcasees.setValidator(vint)
-        self.inicio()
-        pass
 
-    def inicio(self):
+        if self.tipo_usuario==4:
+            self.cmdAceptar.setEnabled(False)
+
         self.cmbPlataforma.addItem('Madera')
         self.cmbPlataforma.addItem('Hormigón')
         self.cmbPlataforma.addItem('Mixta')
@@ -65,8 +66,7 @@ class frmCT(DialogType, DialogBase):
 
         cnn = self.conn
         cursor = cnn.cursor()
-        recordset = []
-        cursor.execute("SELECT id_ct,ubicacion,mat_plataf,Tipo_Ct,obs,es,caeis,caeies,caees,caeees,casis,casies,cases,casees,exp,conservacion,descargadores FROM Ct WHERE id_ct IN (SELECT Nombre FROM Nodos WHERE geoname=" + str(self.geoname) + ")")
+        cursor.execute("SELECT id_ct,ubicacion,mat_plataf,Tipo_Ct,obs,es,caeis,caeies,caees,caeees,casis,casies,cases,casees,exp,conservacion,descargadores FROM Ct WHERE id_ct IN (SELECT Nombre FROM Nodos WHERE Nodos.Tension>0 AND  geoname=" + str(self.geoname) + ")")
         #convierto el cursor en array
         recordset = tuple(cursor)
         cursor.close()
@@ -76,10 +76,15 @@ class frmCT(DialogType, DialogBase):
             str_campos = "id_ct,ubicacion,mat_plataf,Tipo_Ct,obs,es,caeis,caeies,caees,caeees,casis,casies,cases,casees,exp,conservacion,descargadores"
             str_valores = "'" + self.nombre + "','','Madera','Monoposte','',1,0,0,0,0,0,0,0,0,'1111/2001','Bueno',1"
 
-            cnn = self.conn
-            cursor = cnn.cursor()
-            cursor.execute("INSERT INTO Ct (" + str_campos + ") VALUES (" + str_valores + ")")
-            cnn.commit()
+            try:
+                cnn = self.conn
+                cursor = cnn.cursor()
+                cursor.execute("INSERT INTO Ct (" + str_campos + ") VALUES (" + str_valores + ")")
+                cnn.commit()
+            except:
+                cnn.rollback()
+                QMessageBox.information(None, 'EnerGis 5', "No se pudo insertar !")
+                pass
             self.txtCT.setText(self.nombre)
 
         else:
@@ -112,7 +117,7 @@ class frmCT(DialogType, DialogBase):
                 if self.cmbEstado.itemText(i) == str(recordset[0][15]):
                     self.cmbEstado.setCurrentIndex(i)
 
-            self.txtDescargadores.setText(recordset[0][16])
+            self.txtDescargadores.setText(str(recordset[0][16]))
 
         pass
 
@@ -144,8 +149,13 @@ class frmCT(DialogType, DialogBase):
         str_set = str_set + "conservacion='" + self.cmbEstado.currentText() + "',"
         str_set = str_set + "descargadores=" + self.txtDescargadores.text()
 
-        cursor.execute("UPDATE Ct SET " + str_set + " WHERE id_ct='" + self.txtCT.text() + "'")
-        cnn.commit()
+        try:
+            cursor.execute("UPDATE Ct SET " + str_set + " WHERE id_ct='" + self.txtCT.text() + "'")
+            cnn.commit()
+        except:
+            cnn.rollback()
+            QMessageBox.information(None, 'EnerGis 5', "No se pudo actualizar !")
+        pass
         #QMessageBox.information(None, 'EnerGis 5', str_set)
         self.close()
         pass

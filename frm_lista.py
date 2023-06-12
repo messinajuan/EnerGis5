@@ -13,7 +13,7 @@
 import os
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QTableWidgetItem
-#from PyQt5.QtWidgets import QMessageBox
+from PyQt5.QtWidgets import QMessageBox
 from PyQt5 import uic
 
 DialogBase, DialogType = uic.loadUiType(os.path.join(os.path.dirname(__file__),'frm_lista.ui'))
@@ -49,7 +49,6 @@ class frmLista(DialogType, DialogBase):
 
     def elijo_item(self):
         id = int(self.tblLista.selectedItems()[2].text())
-        #QMessageBox.information(None, 'Navego Fuente', str(id))
 
         if self.tblLista.selectedItems()[0].text()=='Nodos':
             n = self.mapCanvas.layerCount()

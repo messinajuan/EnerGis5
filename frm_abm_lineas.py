@@ -20,26 +20,26 @@ DialogBase, DialogType = uic.loadUiType(os.path.join(os.path.dirname(__file__),'
 
 class frmAbmLineas(DialogType, DialogBase):
 
-    def __init__(self, conn, id):
+    def __init__(self, tipo_usuario, conn, id):
         super().__init__()
         self.setupUi(self)
         self.setFixedSize(self.size())
+        self.tipo_usuario = tipo_usuario
         self.conn = conn
         self.id = id
         vint = QIntValidator()
         vfloat = QDoubleValidator()
         self.txtCorriente.setValidator(vfloat)
-        self.txtSeccion.setValidator(vfloat)
         self.txtR1.setValidator(vfloat)
         self.txtX1.setValidator(vfloat)
         self.txtR0.setValidator(vfloat)
         self.txtX0.setValidator(vfloat)
         self.txtXc.setValidator(vfloat)
         self.txtSubconductores.setValidator(vint)
-        self.inicio()
-        pass
 
-    def inicio(self):
+        if self.tipo_usuario==4:
+            self.groupBox.setTitle('Datos de la línea')
+            self.cmdAceptar.setEnabled(False)
 
         self.cmbTipo.addItem('Aereo')
         self.cmbTipo.addItem('Subterráneo')
@@ -72,6 +72,13 @@ class frmAbmLineas(DialogType, DialogBase):
         self.cmbMaterialHG.addItem('Acero')
         self.cmbMaterialHG.addItem('OPWG')
 
+        self.cmbMaterialAL.addItem('')
+        self.cmbMaterialAL.addItem('Al')
+        self.cmbMaterialAL.addItem('Al/Al')
+        self.cmbMaterialAL.addItem('Cu')
+        self.cmbMaterialAL.addItem('Ac')
+        self.cmbMaterialAL.addItem('Al/Ac')
+
         self.txtCorriente.setText('0')
         self.txtR1.setText('0')
         self.txtX1.setText('0')
@@ -79,18 +86,35 @@ class frmAbmLineas(DialogType, DialogBase):
         self.txtX0.setText('0')
         self.txtXc.setText('0')
 
+        fase = [4, 5.94, 6, 6.63, 7.06, 8.37, 9.4, 10, 10.55, 11.94, 16, 19.95, 25, 25.05, 35, 50, 70, 95, 120, 150, 185, 240, 300, 340, 380, 435, 550, 680]
+        neutro = [4, 6, 10, 16, 25, 35, 50, 70, 95, 120, 150, 185, 240, 300, 340, 380, 435, 550, 680]
+        hiloguardia = [4, 6, 10, 16, 25, 35, 50, 70, 95, 120]
+        alumbrado = [16, 25, 35, 50]
+
+        for s in fase:
+            self.cmbSeccionFase.addItem(str(s))
+        for s in neutro:
+            self.cmbSeccionNeutro.addItem(str(s))
+        for s in hiloguardia:
+            self.cmbSeccionHG.addItem(str(s))
+        for s in alumbrado:
+            self.cmbSeccionAL.addItem(str(s))
+
         cnn = self.conn
         if self.id!=0:
             cursor = cnn.cursor()
-            datos_elemento = []
-            cursor.execute("SELECT Descripcion,Val1,Val2,Val3,Val4,Val5,Val6,Val7,Val8,Val9,Val10,Val11,Val12,Val13,Val14,Val15,Val16 FROM Elementos_Lineas WHERE id=" + str(self.id))
+            cursor.execute("SELECT Descripcion,Val1,Val2,Val3,Val4,Val5,Val6,Val7,Val8,Val9,Val10,Val11,Val12,Val13,Val14,Val15,Val16,Val17,Val18 FROM Elementos_Lineas WHERE id=" + str(self.id))
             #convierto el cursor en array
             datos_elemento = tuple(cursor)
             cursor.close()
 
             self.txtElemento.setText(datos_elemento[0][0])
             self.txtCorriente.setText(datos_elemento[0][1])
-            self.txtSeccion.setText(datos_elemento[0][2])
+
+            for i in range (0, self.cmbSeccionFase.count()):
+                if self.cmbSeccionFase.itemText(i) == str(datos_elemento[0][2]):
+                    self.cmbSeccionFase.setCurrentIndex(i)
+
             self.txtR1.setText(datos_elemento[0][3])
             self.txtX1.setText(datos_elemento[0][4])
             self.txtR0.setText(datos_elemento[0][5])
@@ -109,12 +133,15 @@ class frmAbmLineas(DialogType, DialogBase):
                 if self.cmbAislacion.itemText(i) == str(datos_elemento[0][10]):
                     self.cmbAislacion.setCurrentIndex(i)
 
-            if datos_elemento[0][11]==1:
+            if datos_elemento[0][11]=="1":
                 self.grpNeutro.setChecked(True)
                 for i in range (0, self.cmbMaterialNeutro.count()):
                     if self.cmbMaterialNeutro.itemText(i) == str(datos_elemento[0][12]):
                         self.cmbMaterialNeutro.setCurrentIndex(i)
-                self.txtSeccionNeutro.setText(datos_elemento[0][13])
+
+            for i in range (0, self.cmbSeccionNeutro.count()):
+                if self.cmbSeccionNeutro.itemText(i) == str(datos_elemento[0][13]):
+                    self.cmbSeccionNeutro.setCurrentIndex(i)
 
             self.txtSubconductores.setText(datos_elemento[0][14])
             if datos_elemento[0][15]!='N':
@@ -122,10 +149,24 @@ class frmAbmLineas(DialogType, DialogBase):
                 for i in range (0, self.cmbMaterialHG.count()):
                     if self.cmbMaterialHG.itemText(i) == str(datos_elemento[0][15]):
                         self.cmbMaterialHG.setCurrentIndex(i)
-                self.txtSeccionHG.setText(datos_elemento[0][16])
+
+            for i in range (0, self.cmbSeccionHG.count()):
+                if self.cmbSeccionHG.itemText(i) == str(datos_elemento[0][16]):
+                    self.cmbSeccionHG.setCurrentIndex(i)
+
+            if datos_elemento[0][17]!='N':
+                self.grpAL.setChecked(True)
+                for i in range (0, self.cmbMaterialAL.count()):
+                    if self.cmbMaterialAL.itemText(i) == str(datos_elemento[0][17]):
+                        self.cmbMaterialAL.setCurrentIndex(i)
+
+            for i in range (0, self.cmbSeccionAL.count()):
+                if self.cmbSeccionAL.itemText(i) == str(datos_elemento[0][18]):
+                    self.cmbSeccionAL.setCurrentIndex(i)
 
         self.cmdAceptar.clicked.connect(self.aceptar)
         self.cmdSalir.clicked.connect(self.salir)
+
         pass
 
     def aceptar(self):
@@ -133,7 +174,7 @@ class frmAbmLineas(DialogType, DialogBase):
         if self.txtElemento.text() == "":
             QMessageBox.information(None, 'EnerGis 5', "Debe ingresar un elemento")
             return
-        if self.txtSeccion.text() == "":
+        if self.cmbMaterial.currentText() == "":
             QMessageBox.information(None, 'EnerGis 5', "Cargar sección del conductor !")
             return
         if self.cmbMaterial.currentText() == "":
@@ -146,7 +187,7 @@ class frmAbmLineas(DialogType, DialogBase):
             chk_neutro=0
 
         if chk_neutro==1:
-            if self.txtSeccionNeutro.text() == "":
+            if self.cmbSeccionNeutro.currentText() == "":
                 QMessageBox.information(None, 'EnerGis 5', "Cargar sección del neutro !")
                 return
         if chk_neutro==1 and self.cmbMaterialNeutro.currentText() == "":
@@ -159,23 +200,37 @@ class frmAbmLineas(DialogType, DialogBase):
             chk_hg=0
 
         if chk_hg==1:
-            if self.txtSeccionHG.text() == "":
+            if self.cmbSeccionHG.currentText() == "":
                 QMessageBox.information(None, 'EnerGis 5', "Cargar sección del hilo de guardia !")
                 return
             if self.cmbMaterialHG.currentText() == "":
                 QMessageBox.information(None, 'EnerGis 5', "Seleccionar material del hilo de guardia !")
                 return
-
             material_hg=self.cmbMaterialHG.currentText()
         else:
             material_hg='N'
+
+        if self.grpAL.isChecked() == True:
+            chk_al=1
+        else:
+            chk_al=0
+
+        if chk_al==1:
+            if self.cmbSeccionAL.currentText() == "":
+                QMessageBox.information(None, 'EnerGis 5', "Cargar sección del conductor de alumbrado !")
+                return
+            if self.cmbMaterialAL.currentText() == "":
+                QMessageBox.information(None, 'EnerGis 5', "Seleccionar material del conductor de alumbrado !")
+                return
+            material_al=self.cmbMaterialAL.currentText()
+        else:
+            material_al='N'
 
         cnn = self.conn
         cursor = cnn.cursor()
 
         if self.id==0: #Nuevo
             cursor = cnn.cursor()
-            rst = []
             cursor.execute("SELECT * FROM Elementos_Lineas WHERE Descripcion='" + self.txtElemento.text() + "'")
             #convierto el cursor en array
             rst = tuple(cursor)
@@ -184,31 +239,6 @@ class frmAbmLineas(DialogType, DialogBase):
             if len(rst)!=0:
                 QMessageBox.information(None, 'EnerGis 5', "El elemento ya existe")
                 return
-
-            cursor = cnn.cursor()
-            rst = []
-            cursor.execute("SELECT * FROM Secciones WHERE Tipo='F' AND Seccion=" + self.txtSeccion.text())
-            #convierto el cursor en array
-            rst = tuple(cursor)
-            cursor.close()
-
-            if len(rst)==0:
-                reply = QMessageBox.question(None, 'EnerGis 5', 'La sección de la fase no se encuentra entre las predefinidas por el sistema, desea continuar ?', QMessageBox.Yes, QMessageBox.No)
-                if reply == QMessageBox.No:
-                    return
-
-            if chk_neutro==1:
-                cursor = cnn.cursor()
-                rst = []
-                cursor.execute("SELECT * FROM Secciones WHERE Tipo='N' AND Seccion=" + self.txtSeccionNeutro.text())
-                #convierto el cursor en array
-                rst = tuple(cursor)
-                cursor.close()
-
-                if len(rst)==0:
-                    reply = QMessageBox.question(None, 'EnerGis 5', 'La sección del neutro no se encuentra entre las predefinidas por el sistema, desea continuar ?', QMessageBox.Yes, QMessageBox.No)
-                    if reply == QMessageBox.No:
-                        return
 
             reply = QMessageBox.question(None, 'EnerGis 5', '¿ Guardar los datos ?', QMessageBox.Yes, QMessageBox.No)
             if reply == QMessageBox.Yes:
@@ -220,51 +250,24 @@ class frmAbmLineas(DialogType, DialogBase):
                 id = rows[0][0] + 1
                 try:
                     cursor = cnn.cursor()
-                    cursor.execute("INSERT INTO Elementos_Lineas (Id,Descripcion,Estilo,Val1,Val2,Val3,Val4,Val5,Val6,Val7,Val8,Val9,Val10,Val11,Val12,Val13,Val14,Val15,Val16) VALUES (" + str(id) + ",'" + self.txtElemento.text() + "','0-False-1-1-0','" + self.txtCorriente.text() + "','" + self.txtSeccion.text() + "','" + self.txtR1.text() + "','" + self.txtX1.text() + "','" + self.txtR0.text() + "','" + self.txtX0.text() + "','" + self.txtXc.text() + "','" + self.cmbTipo.currentText()[:1] + "','" + self.cmbMaterial.currentText() + "','" + self.cmbAislacion.currentText() + "','" + str(chk_neutro) + "','" + self.cmbMaterialNeutro.currentText() + "','" + self.txtSeccionNeutro.text() + "','" + self.txtSubconductores.text() + "','" + material_hg + "','" + self.txtSeccionHG.text() + "')")
+                    cursor.execute("INSERT INTO Elementos_Lineas (Id,Descripcion,Estilo,Val1,Val2,Val3,Val4,Val5,Val6,Val7,Val8,Val9,Val10,Val11,Val12,Val13,Val14,Val15,Val16,Val17,Val18) VALUES (" + str(id) + ",'" + self.txtElemento.text() + "','0-False-1-1-0','" + self.txtCorriente.text() + "','" + self.cmbSeccionFase.currentText() + "','" + self.txtR1.text() + "','" + self.txtX1.text() + "','" + self.txtR0.text() + "','" + self.txtX0.text() + "','" + self.txtXc.text() + "','" + self.cmbTipo.currentText()[:1] + "','" + self.cmbMaterial.currentText() + "','" + self.cmbAislacion.currentText() + "','" + str(chk_neutro) + "','" + self.cmbMaterialNeutro.currentText() + "','" + self.cmbSeccionNeutro.currentText() + "','" + self.txtSubconductores.text() + "','" + material_hg + "','" + self.cmbSeccionHG.currentText() + "','" + material_al + "','" + self.cmbSeccionAL.currentText() + "')")
                     cnn.commit()
                     QMessageBox.information(None, 'EnerGis 5', "Conductor agregado !")
                 except:
-                    #QMessageBox.information(None, 'EnerGis 5', "INSERT INTO Elementos_Lineas (Id,Descripcion,Estilo,Val1,Val2,Val3,Val4,Val5,Val6,Val7,Val8,Val9,Val10,Val11,Val12,Val13) VALUES (" + str(id) + ",'" + self.txtElemento.text() + "','0-False-1-1-0','" + self.txtCorriente.text() + "','" + self.txtSeccion.text() + "','" + self.txtR1.text() + "','" + self.txtX1.text() + "','" + self.txtR0.text() + "','" + self.txtX0.text() + "','" + self.txtXc.text() + "','" + self.cmbTipo.currentText()[:1] + "','" + self.cmbMaterial.currentText() + "','" + self.cmbAislacion.currentText() + "','" + str(chk_neutro) + "','" + self.cmbMaterialNeutro.currentText() + "','" + self.txtSeccionNeutro.text() + "')")
                     cnn.rollback()
                     QMessageBox.information(None, 'EnerGis 5', "No se pudo grabar !")
                     return
 
         else: #edicion
 
-            cursor = cnn.cursor()
-            rst = []
-            cursor.execute("SELECT * FROM Secciones WHERE Tipo='F' AND Seccion=" + self.txtSeccion.text())
-            #convierto el cursor en array
-            rst = tuple(cursor)
-            cursor.close()
-
-            if len(rst)==0:
-                reply = QMessageBox.question(None, 'EnerGis 5', 'La sección de la fase no se encuentra entre las predefinidas por el sistema, desea continuar ?', QMessageBox.Yes, QMessageBox.No)
-                if reply == QMessageBox.No:
-                    return
-
-                if chk_neutro==1:
-                    cursor = cnn.cursor()
-                    rst = []
-                    cursor.execute("SELECT * FROM Secciones WHERE Tipo='N' AND Seccion=" + self.txtSeccionNeutro.text())
-                    #convierto el cursor en array
-                    rst = tuple(cursor)
-                    cursor.close()
-
-                    if len(rst)==0:
-                        reply = QMessageBox.question(None, 'EnerGis 5', 'La sección del neutro no se encuentra entre las predefinidas por el sistema, desea continuar ?', QMessageBox.Yes, QMessageBox.No)
-                        if reply == QMessageBox.No:
-                            return
-
             reply = QMessageBox.question(None, 'EnerGis 5', '¿ Desea guardar los cambios ?', QMessageBox.Yes, QMessageBox.No)
             if reply == QMessageBox.Yes:
                 try:
                     cursor = cnn.cursor()
-                    cursor.execute("UPDATE Elementos_Lineas SET Descripcion='" + self.txtElemento.text() + "',Estilo='0-False-1-1-0',Val1='" + self.txtCorriente.text() + "',Val2='" + self.txtSeccion.text() + "',Val3='" + self.txtR1.text() + "',Val4='" + self.txtX1.text() + "',Val5='" + self.txtR0.text() + "',Val6='" + self.txtX0.text() + "',Val7='" + self.txtXc.text() + "',Val8='" + self.cmbTipo.currentText()[:1] + "',Val9='" + self.cmbMaterial.currentText() + "',Val10='" + self.cmbAislacion.currentText() + "',Val11='" + str(chk_neutro) + "',Val12='" + self.cmbMaterialNeutro.currentText() + "',Val13='" + self.txtSeccionNeutro.text() + "',Val14='" + self.txtSubconductores.text() + "',Val15='" + material_hg + "',Val16='" + self.txtSeccionHG.text() + "' WHERE id=" + str(self.id))
+                    cursor.execute("UPDATE Elementos_Lineas SET Descripcion='" + self.txtElemento.text() + "',Estilo='0-False-1-1-0',Val1='" + self.txtCorriente.text() + "',Val2='" + self.cmbSeccionFase.currentText() + "',Val3='" + self.txtR1.text() + "',Val4='" + self.txtX1.text() + "',Val5='" + self.txtR0.text() + "',Val6='" + self.txtX0.text() + "',Val7='" + self.txtXc.text() + "',Val8='" + self.cmbTipo.currentText()[:1] + "',Val9='" + self.cmbMaterial.currentText() + "',Val10='" + self.cmbAislacion.currentText() + "',Val11='" + str(chk_neutro) + "',Val12='" + self.cmbMaterialNeutro.currentText() + "',Val13='" + self.cmbSeccionNeutro.currentText() + "',Val14='" + self.txtSubconductores.text() + "',Val15='" + material_hg + "',Val16='" + self.cmbSeccionHG.currentText() + "',Val17='" + material_al + "',Val18='" + self.cmbSeccionAL.currentText() + "' WHERE id=" + str(self.id))
                     cnn.commit()
                     QMessageBox.information(None, 'EnerGis 5', "Actualizado !")
                 except:
-                    #QMessageBox.information(None, 'EnerGis 5', "UPDATE Elementos_Lineas SET Descripcion='" + self.txtElemento.text() + "',Estilo='0-False-1-1-0',Val1='" + self.txtCorriente.text() + "',Val2='" + self.txtSeccion.text() + "',Val3='" + self.txtR1.text() + "',Val4='" + self.txtX1.text() + "',Val5='" + self.txtR0.text() + "',Val6='" + self.txtX0.text() + "',Val7='" + self.txtXc.text() + "',Val8='" +  self.cmbTipo.currentText()[:1] + "',Val9='" + self.cmbMaterial.currentText() + "',Val10='" + self.cmbAislacion.currentText() + "',Val11='" + str(chk_neutro) + "',Val12='" + self.cmbMaterialNeutro.currentText() + "',Val13='" + self.txtSeccionNeutro.text() + "' WHERE id=" + str(self.id))
                     cnn.rollback()
                     QMessageBox.information(None, 'EnerGis 5', "No se pudo actualizar !")
                     return

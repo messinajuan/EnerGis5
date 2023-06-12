@@ -19,11 +19,12 @@ DialogBase, DialogType = uic.loadUiType(os.path.join(os.path.dirname(__file__),'
 
 class frmParametrosTrafo(DialogType, DialogBase):
 
-    def __init__(self, conn, id, potencia):
+    def __init__(self, tipo_usuario, conn, id, potencia):
         super().__init__()
         self.setupUi(self)
         self.setFixedSize(self.size())
         #basepath = os.path.dirname(os.path.realpath(__file__))
+        self.tipo_usuario = tipo_usuario
         self.conn = conn
         self.id = id
         self.potencia = potencia
@@ -31,15 +32,13 @@ class frmParametrosTrafo(DialogType, DialogBase):
         self.txtRpu.setValidator(vfloat)
         self.txtXpu.setValidator(vfloat)
         self.txtPo.setValidator(vfloat)
-        self.inicio()
-        pass
 
-    def inicio(self):
+        if self.tipo_usuario==4:
+            self.cmdAceptar.setEnabled(False)
+
         cnn = self.conn
-
         self.dial.valueChanged.connect(self.tap)
         cursor = cnn.cursor()
-        rs = []
         cursor.execute("SELECT R1, X1, P01, Tap1 FROM Transformadores_Parametros WHERE Id_Trafo=" + str(self.id))
         #convierto el cursor en array
         rs = tuple(cursor)
@@ -105,12 +104,10 @@ class frmParametrosTrafo(DialogType, DialogBase):
             cursor = cnn.cursor()
             cursor.execute("UPDATE Transformadores_Parametros SET " + str_set + " WHERE id_trafo=" + str(self.id))
             cnn.commit()
-            #QMessageBox.information(None, 'EnerGis 5', "Grabado !")
         except:
             cnn.rollback()
             QMessageBox.information(None, 'EnerGis 5', "No se pudo grabar !")
             return
-        cnn.commit()
         self.close()
         pass
 

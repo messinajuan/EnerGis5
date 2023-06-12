@@ -11,22 +11,22 @@
 #---------------------------------------------------------------------
 
 import os
-#from PyQt5.QtWidgets import QMessageBox
+from PyQt5.QtWidgets import QMessageBox
 from PyQt5 import uic
 
 DialogBase, DialogType = uic.loadUiType(os.path.join(os.path.dirname(__file__),'frm_areas.ui'))
 
 class frmAreas(DialogType, DialogBase):
 
-    def __init__(self, mapCanvas, conn, obj, geoname):
+    def __init__(self, tipo_usuario, mapCanvas, conn, obj, geoname):
         super().__init__()
         self.setupUi(self)
         self.setFixedSize(self.size())
+        self.tipo_usuario = tipo_usuario
         self.mapCanvas = mapCanvas
         self.conn = conn
         self.obj = obj
         self.geoname = geoname
-        self.arrLocalidad=[]
         self.localidad=0
         self.inicio()
         pass
@@ -51,14 +51,13 @@ class frmAreas(DialogType, DialogBase):
         #QMessageBox.information(None, 'EnerGis 5', 'Inicio')
         cnn = self.conn
         cursor = cnn.cursor()
-        ciudades = []
+        self.ciudades=[]
         cursor.execute("SELECT Ciudad, Descripcion FROM Ciudades")
         #convierto el cursor en array
-        ciudades = tuple(cursor)
+        self.ciudades = tuple(cursor)
         cursor.close()
-        for i in range (0, len(ciudades)):
-            self.arrLocalidad.append(ciudades)
-            self.cmbLocalidad.addItem(ciudades[i][1])
+        for i in range (0, len(self.ciudades)):
+            self.cmbLocalidad.addItem(self.ciudades[i][1])
 
         self.cmbZona.addItem('Rural')
         self.cmbZona.addItem('SubUrbana')
@@ -67,8 +66,7 @@ class frmAreas(DialogType, DialogBase):
         if self.geoname != 0:
             self.lblArea.setText(str(self.geoname))
             cursor = cnn.cursor()
-            datos_area = []
-            cursor.execute("SELECT Ciudades.Descripcion, Nombre, Areas.Descripcion, Areas.Localidad FROM Areas LEFT JOIN Ciudades ON Areas.Localidad=Ciudades.ciudad WHERE Geoname=" + str(self.geoname))
+            cursor.execute("SELECT Ciudades.Descripcion, Areas.Nombre, Areas.Descripcion, Areas.Localidad FROM Areas LEFT JOIN Ciudades ON Areas.Localidad=Ciudades.ciudad WHERE Geoname=" + str(self.geoname))
             #convierto el cursor en array
             datos_area = tuple(cursor)
             cursor.close()
@@ -79,7 +77,6 @@ class frmAreas(DialogType, DialogBase):
                     if self.cmbLocalidad.itemText(i) == str(datos_area[0][0]):
                         self.cmbLocalidad.setCurrentIndex(i)
 
-            #self.cmbCapa.setCurrentIndex(0)
             for i in range (0, self.cmbZona.count()):
                 if self.cmbZona.itemText(i) == str(datos_area[0][1]):
                     self.cmbZona.setCurrentIndex(i)
@@ -87,16 +84,10 @@ class frmAreas(DialogType, DialogBase):
             self.txtBarrio.setText(str(datos_area[0][2]))
             self.localidad = datos_area[0][3]
 
-        self.cmbLocalidad.currentIndexChanged.connect(self.elijo_ciudad)
         self.cmdAceptar.clicked.connect(self.aceptar)
         self.cmdSalir.clicked.connect(self.salir)
 
         pass
-
-    def elijo_ciudad(self):
-        for i in range (0, len(self.arrLocalidad)):
-            if self.cmbLocalidad.itemText(i) == str(self.arrLocalidad[0][1]):
-                self.localidad = str(self.arrLocalidad[0][0])
 
     def aceptar(self):
         obj = ''
@@ -121,27 +112,45 @@ class frmAreas(DialogType, DialogBase):
 
             str_valores = str(id) + ", "
 
+            for i in range (0, len(self.ciudades)):
+                if self.cmbLocalidad.itemText(i) == str(self.ciudades[i][1]):
+                    self.localidad = self.ciudades[i][0]
+
             str_valores = str_valores + "'" + str(self.localidad) + "', "
             str_valores = str_valores + "'" + self.cmbZona.currentText() + "', "
             str_valores = str_valores + "'" + self.txtBarrio.text() + "', "
             str_valores = str_valores + obj
 
             cursor = cnn.cursor()
-            cursor.execute("INSERT INTO Areas (Geoname, Localidad, Nombre, Descripcion, obj) VALUES (" + str_valores + ")")
-            cnn.commit()
+            try:
+                cursor.execute("INSERT INTO Areas (Geoname, Localidad, Nombre, Descripcion, obj) VALUES (" + str_valores + ")")
+                cnn.commit()
+            except:
+                cnn.rollback()
+                QMessageBox.information(None, 'EnerGis 5', "No se pudieron insertar Areas !")
+            pass
 
         else: #Si cambio algo -> UPDATE
             cnn = self.conn
+            cnn.autocommit = False
             cursor = cnn.cursor()
+
+            for i in range (0, len(self.ciudades)):
+                if self.cmbLocalidad.itemText(i) == str(self.ciudades[i][1]):
+                    self.localidad = self.ciudades[i][0]
 
             str_set = "Localidad=" + str(self.localidad) + ", "
             str_set = str_set + "Nombre='" + self.cmbZona.currentText() + "', "
             str_set = str_set + "Descripcion='" + self.txtBarrio.text() + "'"
 
             #QMessageBox.information(None, 'EnerGis 5', str_set)
-
-            cursor.execute("UPDATE Areas SET " + str_set + " WHERE Geoname=" + str(self.geoname))
-            cnn.commit()
+            try:
+                cursor.execute("UPDATE Areas SET " + str_set + " WHERE Geoname=" + str(self.geoname))
+                cnn.commit()
+            except:
+                cnn.rollback()
+                QMessageBox.information(None, 'EnerGis 5', "No se pudo actualizar !")
+            pass
 
         self.close()
         pass

@@ -20,13 +20,17 @@ DialogBase, DialogType = uic.loadUiType(os.path.join(os.path.dirname(__file__),'
 
 class frmInsertarPostes(DialogType, DialogBase):
         
-    def __init__(self, mapCanvas, conn, tension, geoname, p1, p2):
+    def __init__(self, proyecto, mapCanvas, conn, tension, geoname, p1, p2):
         super().__init__()
         self.setupUi(self)
         self.setFixedSize(self.size())
         self.mapCanvas = mapCanvas
         self.conn = conn
-        self.tension = tension
+        self.proyecto = proyecto
+        if tension == 'Proyectos':
+            self.tension = '0'
+        else:
+            self.tension = tension
         self.geoname = geoname
         self.p1 = p1
         self.p2 = p2
@@ -37,10 +41,6 @@ class frmInsertarPostes(DialogType, DialogBase):
         self.arrRienda = []
         vfloat = QDoubleValidator()
         self.txtAltura.setValidator(vfloat)
-        self.inicio()
-        pass
-        
-    def inicio(self):
 
         #self.longitud = pow((pow((self.p2.x()-self.p1.x()), 2) + pow((self.p2.y()-self.p1.y()), 2)), 0.5)
         self.longitud = self.p1.distance(self.p2)
@@ -48,7 +48,6 @@ class frmInsertarPostes(DialogType, DialogBase):
 
         cnn = self.conn
         cursor = cnn.cursor()
-        rows = []
         cursor.execute("SELECT id, descripcion FROM Estructuras")
         #convierto el cursor en array
         rows = tuple(cursor)
@@ -58,7 +57,6 @@ class frmInsertarPostes(DialogType, DialogBase):
             self.cmbEstructura.addItem(str(row[1]))
 
         cursor = cnn.cursor()
-        rows = []
         cursor.execute("SELECT id, descripcion, estilo FROM Elementos_Postes")
         #convierto el cursor en array
         rows = tuple(cursor)
@@ -80,7 +78,6 @@ class frmInsertarPostes(DialogType, DialogBase):
         self.cmbAislacion.addItem('Percha')
 
         cursor = cnn.cursor()
-        rows = []
         cursor.execute("SELECT id, descripcion FROM Riendas")
         #convierto el cursor en array
         rows = tuple(cursor)
@@ -183,6 +180,7 @@ class frmInsertarPostes(DialogType, DialogBase):
             cursor = cnn.cursor()
             str_valores = str(id) + ", "
             str_valores = str_valores + "0, "
+            str_valores = str_valores + "'" + self.proyecto + "', "
             str_valores = str_valores + str(x) + ", "
             str_valores = str_valores + str(y) + ", "
             str_valores = str_valores + str(self.elmt) + ", "
@@ -209,7 +207,8 @@ class frmInsertarPostes(DialogType, DialogBase):
             str_valores = str_valores + "0, "
             str_valores = str_valores + obj
             try:
-                cursor.execute("INSERT INTO Postes (Geoname,id_nodo,XCoord,YCoord,elmt,estilo,estructura,rienda,altura,nivel,zona,tension,tipo,aislacion,fundacion,comparte,ternas,modificacion,pat,descargadores,obj) VALUES (" + str_valores + ")")
+
+                cursor.execute("INSERT INTO Postes (Geoname,id_nodo,descripcion,XCoord,YCoord,elmt,estilo,estructura,rienda,altura,nivel,zona,tension,tipo,aislacion,fundacion,comparte,ternas,modificacion,pat,descargadores,obj) VALUES (" + str_valores + ")")
                 cnn.commit()
 
                 cursor.execute('INSERT INTO Lineas_Postes(id_linea, id_poste) VALUES (' + str(self.geoname) + ', ' + str(str(id)) + ')')
@@ -224,8 +223,8 @@ class frmInsertarPostes(DialogType, DialogBase):
                 self.salir()
 
             except:
-                QMessageBox.information(None, 'EnerGis 5', 'Error al insertar el poste')
                 cnn.rollback()
+                QMessageBox.information(None, 'EnerGis 5', 'Error al insertar el poste')
         pass
 
     def salir(self):

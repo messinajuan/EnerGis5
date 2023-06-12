@@ -50,11 +50,9 @@ class herrSeleccionAleatoria(QgsMapTool):
 
         if str(event.key()) == '16777249':
             #tecla = 'Ctrl'
-            #QMessageBox.information(None, "Mensaje", str(event.key()))
             pass
         if str(event.key()) == '16777216':
             #tecla = 'Esc'
-            #QMessageBox.information(None, "Mensaje", str(event.key()))
             self.puntos = []
             self.limpiar_areas_temp()
             pass

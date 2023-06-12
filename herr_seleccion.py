@@ -33,9 +33,10 @@ from .herr_navegar_extremos import herrNavegarExtremos
 basepath = os.path.dirname(os.path.realpath(__file__))
 
 class herrSeleccion(QgsMapTool):
-
-    def __init__(self, mapCanvas, iface, conn, mnodos, mlineas, tension):
+    def __init__(self, proyecto, tipo_usuario, mapCanvas, iface, conn, mnodos, mlineas, tension):
         QgsMapTool.__init__(self, mapCanvas)
+        self.proyecto = proyecto
+        self.tipo_usuario = tipo_usuario
         self.mapCanvas = mapCanvas
         self.iface = iface
         self.conn = conn
@@ -46,23 +47,218 @@ class herrSeleccion(QgsMapTool):
         self.estado = 0
         self.clipboard=[]
         self.tecla=''
-        #QMessageBox.information(None, 'herrNodo', str(tension))
 
     def keyPressEvent(self, event):
-        #QMessageBox.information(None, "Mensaje", str(event.key()))
         if str(event.key()) == '16777249':
             self.tecla = 'Ctrl'
-            #QMessageBox.information(None, "Mensaje", str(event.key()))
             pass
-            
+
     def keyReleaseEvent(self, event):
         self.tecla=''
         if str(event.key()) == '16777223':
-            self.borrar
+            self.h_borrar() #copiado textualmente de energis5.py
+            pass
+        pass
+
+    def h_borrar(self): #copiado textualmente de energis5.py
+        ftrs_nodos = []
+        ftrs_lineas = []
+        ftrs_postes = []
+        ftrs_areas = []
+        ftrs_parcelas = []
+        capas = []
+        mapCanvas = self.iface.mapCanvas()
+        n = mapCanvas.layerCount()
+        layers = [mapCanvas.layer(i) for i in range(n)]
+        str_nodos = '0'
+        str_lineas = '0'
+        str_postes = '0'
+        str_areas = '0'
+        str_parcelas = '0'
+        for lyr in layers:
+            if lyr.name()[:5] == 'Nodos' and lyr.name()!='Nodos_Temp':
+                for ftr in lyr.selectedFeatures():
+                    ftrs_nodos.append(ftr.id())
+                    str_nodos = str_nodos + ',' + str(ftr.id())
+                    b_existe=False
+                    for capa in capas:
+                        if capa==lyr:
+                            b_existe=True
+                    if b_existe==False:
+                        capas.append(lyr)
+            if lyr.name()[:6] == 'Lineas' and lyr.name()!='Lineas_Temp':
+                for ftr in lyr.selectedFeatures():
+                    ftrs_lineas.append(ftr.id())
+                    str_lineas = str_lineas + ',' + str(ftr.id())
+                    b_existe=False
+                    for capa in capas:
+                        if capa==lyr:
+                            b_existe=True
+                    if b_existe==False:
+                        capas.append(lyr)
+            if lyr.name()[:6] == 'Postes':
+                for ftr in lyr.selectedFeatures():
+                    ftrs_postes.append(ftr.id())
+                    str_postes = str_postes + ',' + str(ftr.id())
+                    b_existe=False
+                    for capa in capas:
+                        if capa==lyr:
+                            b_existe=True
+                    if b_existe==False:
+                        capas.append(lyr)
+            if lyr.name() == 'Areas':
+                for ftr in lyr.selectedFeatures():
+                    ftrs_areas.append(ftr.id())
+                    str_areas = str_areas + ',' + str(ftr.id())
+                    b_existe=False
+                    for capa in capas:
+                        if capa==lyr:
+                            b_existe=True
+                    if b_existe==False:
+                        capas.append(lyr)
+            if lyr.name() == 'Parcelas':
+                for ftr in lyr.selectedFeatures():
+                    ftrs_parcelas.append(ftr.id())
+                    str_parcelas = str_parcelas + ',' + str(ftr.id())
+                    b_existe=False
+                    for capa in capas:
+                        if capa==lyr:
+                            b_existe=True
+                    if b_existe==False:
+                        capas.append(lyr)
+
+        if len(ftrs_nodos) + len(ftrs_lineas) + len(ftrs_postes) + len(ftrs_areas) + len(ftrs_parcelas):
+            if len(capas)==1:
+                reply = QMessageBox.question(None, 'EnerGis', 'Desea borrar los elementos seleccionados ?', QMessageBox.Yes, QMessageBox.No)
+                if reply == QMessageBox.No:
+                    return
+                layers = [self.mapCanvas.layer(i) for i in range(n)]
+                for lyr in layers:
+                    if lyr.name()[:6] == 'Lineas' and lyr.name()!='Lineas_Temp':
+                        cursor = self.conn.cursor()
+                        try:
+                            cursor.execute("DELETE FROM Lineas WHERE Geoname IN (" + str_lineas + ")")
+                            self.conn.commit()
+                        except:
+                            self.conn.rollback()
+                            QMessageBox.information(None, 'EnerGis 5', "No se pudieron borrar Lineas !")
+                        lyr.triggerRepaint()
+                    elif lyr.name()[:5] == 'Nodos' and lyr.name()!='Nodos_Temp':
+                        cursor = self.conn.cursor()
+                        try:
+                            cursor.execute("DELETE FROM Nodos WHERE Geoname IN (" + str_nodos + ")")
+                            self.conn.commit()
+                        except:
+                            self.conn.rollback()
+                            QMessageBox.information(None, 'EnerGis 5', "No se pudieron borrar Nodos !")
+                        lyr.triggerRepaint()
+                    elif lyr.name()[:6] == 'Postes':
+                        cursor = self.conn.cursor()
+                        try:
+                            cursor.execute("DELETE FROM Postes WHERE Geoname IN (" + str_postes + ")")
+                            self.conn.commit()
+                        except:
+                            self.conn.rollback()
+                            QMessageBox.information(None, 'EnerGis 5', "No se pudieron borrar Postes !")
+                        lyr.triggerRepaint()
+                    elif lyr.name() == 'Areas':
+                        cursor = self.conn.cursor()
+                        try:
+                            cursor.execute("DELETE FROM Areas WHERE Geoname IN (" + str_areas + ")")
+                            self.conn.commit()
+                        except:
+                            self.conn.rollback()
+                            QMessageBox.information(None, 'EnerGis 5', "No se pudieron borrar Areas !")
+                        lyr.triggerRepaint()
+                    elif lyr.name() == 'Parcelas':
+                        cursor = self.conn.cursor()
+                        try:
+                            cursor.execute("DELETE FROM Parcelas WHERE Geoname IN (" + str_parcelas + ")")
+                            self.conn.commit()
+                        except:
+                            self.conn.rollback()
+                            QMessageBox.information(None, 'EnerGis 5', "No se pudieron borrar Parcelas !")
+                        lyr.triggerRepaint()
+                    else:
+                        #lyr.triggerRepaint()
+                        pass
+            else:
+                from .frm_borrar import frmBorrar
+                dialogo = frmBorrar(capas)
+                dialogo.exec()
+                capas=dialogo.capas
+                dialogo.close()
+
+                if len(capas)==0:
+                    return
+
+                layers = [self.mapCanvas.layer(i) for i in range(n)]
+                for lyr in layers:
+                    if lyr.name()[:6] == 'Lineas' and lyr.name()!='Lineas_Temp':
+                        for capa in capas:
+                            if capa==lyr.name():
+                                str_tension = lyr.name() [7 - len(lyr.name()):]
+                                cursor = self.conn.cursor()
+                                try:
+                                    cursor.execute("DELETE FROM Lineas WHERE Tension=" + str_tension + " AND Geoname IN (" + str_lineas + ")")
+                                    self.conn.commit()
+                                except:
+                                    self.conn.rollback()
+                                    QMessageBox.information(None, 'EnerGis 5', "No se pudieron borrar Lineas !")
+                                lyr.triggerRepaint()
+                    elif lyr.name()[:5] == 'Nodos' and lyr.name()!='Nodos_Temp':
+                        for capa in capas:
+                            if capa==lyr.name():
+                                str_tension = lyr.name() [6 - len(lyr.name()):]
+                                cursor = self.conn.cursor()
+                                try:
+                                    cursor.execute("DELETE FROM Nodos WHERE Tension=" + str_tension + " AND Geoname IN (" + str_nodos + ")")
+                                    self.conn.commit()
+                                except:
+                                    self.conn.rollback()
+                                    QMessageBox.information(None, 'EnerGis 5', "No se pudieron borrar Nodos !")
+                                lyr.triggerRepaint()
+                    elif lyr.name()[:6] == 'Postes':
+                        for capa in capas:
+                            if capa==lyr.name():
+                                str_tension = lyr.name() [7 - len(lyr.name()):]
+                                cursor = self.conn.cursor()
+                                try:
+                                    cursor.execute("DELETE FROM Postes WHERE Tension=" + str_tension + " AND Geoname IN (" + str_postes + ")")
+                                    self.conn.commit()
+                                except:
+                                    self.conn.rollback()
+                                    QMessageBox.information(None, 'EnerGis 5', "No se pudieron borrar Postes !")
+                                lyr.triggerRepaint()
+                    elif lyr.name() == 'Areas':
+                        for capa in capas:
+                            if capa=='Areas':
+                                cursor = self.conn.cursor()
+                                try:
+                                    cursor.execute("DELETE FROM Areas WHERE Geoname IN (" + str_areas + ")")
+                                    self.conn.commit()
+                                except:
+                                    self.conn.rollback()
+                                    QMessageBox.information(None, 'EnerGis 5', "No se pudieron borrar Areass !")
+                                lyr.triggerRepaint()
+                    elif lyr.name() == 'Parcelas':
+                        for capa in capas:
+                            if capa=='Parcelas':
+                                cursor = self.conn.cursor()
+                                try:
+                                    cursor.execute("DELETE FROM Parcelas WHERE Geoname IN (" + str_parcelas + ")")
+                                    self.conn.commit()
+                                except:
+                                    self.conn.rollback()
+                                    QMessageBox.information(None, 'EnerGis 5', "No se pudieron borrar Parcelas !")
+                                lyr.triggerRepaint()
+                    else:
+                        #lyr.triggerRepaint()
+                        pass
+            return
         pass
 
     def lyr_visible(self, layer):
-
         layer_tree_root = QgsProject.instance().layerTreeRoot()
         layer_tree_layer = layer_tree_root.findLayer(layer)
         return layer_tree_layer.isVisible()
@@ -75,6 +271,9 @@ class herrSeleccion(QgsMapTool):
 
         #primero right click
         if event.button() == Qt.RightButton:
+
+            if self.tipo_usuario==4:
+                return
 
             contextMenu = QMenu()
             n = self.mapCanvas.layerCount()
@@ -105,9 +304,7 @@ class herrSeleccion(QgsMapTool):
                         #QMessageBox.information(None, 'EnerGis 5', lyr.name())
                         lyr.removeSelection()
                         if (lyr.name()[:5] == 'Nodos' and lyr.name() != 'Nodos_Temp') or (lyr.name()[:6] == 'Lineas' and lyr.name() != 'Lineas_Temp') or lyr.name()[:6] == 'Postes' or lyr.name() == 'Areas' or lyr.name() == 'Parcelas':
-
                             #QMessageBox.information(None, 'EnerGis 5', lyr.name())
-
                             width = 5 * self.mapCanvas.mapUnitsPerPixel()
                             rect = QgsRectangle(self.point.x() - width, self.point.y() - width, self.point.x() + width, self.point.y() + width)
                             int = QgsFeatureRequest().setFilterRect(rect).setFlags(QgsFeatureRequest.ExactIntersect)
@@ -233,6 +430,7 @@ class herrSeleccion(QgsMapTool):
                                     return
 
     def canvasDoubleClickEvent(self, event):
+
         #Get the click
         x = event.pos().x()
         y = event.pos().y()
@@ -245,47 +443,65 @@ class herrSeleccion(QgsMapTool):
                 if self.lyr_visible(lyr) is True:
                     if (lyr.name()[:6] == 'Lineas' and lyr.name() != 'Lineas_Temp') or (lyr.name()[:5] == 'Nodos' and lyr.name() != 'Nodos_Temp') or lyr.name()[:6] == 'Postes' or lyr.name() == 'Areas' or lyr.name() == 'Parcelas':
                         #QMessageBox.information(None, 'EnerGis 5', str(lyr.name()))
-                        width = 4 * self.mapCanvas.mapUnitsPerPixel()
+                        width = 6 * self.mapCanvas.mapUnitsPerPixel()
                         rect = QgsRectangle(self.point.x() - width, self.point.y() - width, self.point.x() + width, self.point.y() + width)
                         int = QgsFeatureRequest().setFilterRect(rect).setFlags(QgsFeatureRequest.ExactIntersect)
                         ftrs = lyr.getFeatures(int)
                         for ftr in ftrs:
                             #QMessageBox.information(None, 'EnerGis 5', str(ftr.id()))
                             lyr.select(ftr.id())
+
                             if lyr.name()[:5] == 'Nodos':
                                 str_tension = lyr.name() [6 - len(lyr.name()):]
-                                from .frm_nodos import frmNodos
-                                self.dialogo = frmNodos(self.mapCanvas, self.conn, str_tension, ftr.id(), 0)
-                                self.dialogo.show()
-                                return
+                                if str_tension.strip() == 'Proyectos':
+                                    from .frm_nodos_proyecto import frmNodosProyecto
+                                    self.dialogo = frmNodosProyecto(self.proyecto, self.tipo_usuario, self.mapCanvas, self.conn, str_tension, ftr.id(), 0)
+                                    self.dialogo.show()
+                                    return
+                                else:
+                                    from .frm_nodos import frmNodos
+                                    self.dialogo = frmNodos(self.tipo_usuario, self.mapCanvas, self.conn, str_tension, ftr.id(), 0)
+                                    self.dialogo.show()
+                                    return
                             if lyr.name()[:6] == 'Lineas':
                                 str_tension = lyr.name() [7 - len(lyr.name()):]
-                                from .frm_lineas import frmLineas
-                                self.dialogo = frmLineas(self.mapCanvas, self.conn, str_tension, 0, 0, ftr.geometry().length(), None, ftr.id())
-                                self.dialogo.show()
-                                return
+                                if str_tension.strip() == 'Proyectos':
+                                    from .frm_lineas_proyecto import frmLineasProyecto
+                                    self.dialogo = frmLineasProyecto(self.proyecto, self.tipo_usuario, self.mapCanvas, self.conn, str_tension, 0, 0, ftr.geometry().length(), None, ftr.id())
+                                    self.dialogo.show()
+                                    return
+                                else:
+                                    from .frm_lineas import frmLineas
+                                    self.dialogo = frmLineas(self.tipo_usuario, self.mapCanvas, self.conn, str_tension, 0, 0, ftr.geometry().length(), None, ftr.id())
+                                    self.dialogo.show()
+                                    return
                             if lyr.name()[:6] == 'Postes':
                                 str_tension = lyr.name() [7 - len(lyr.name()):]
-                                from .frm_postes import frmPostes
-                                self.dialogo = frmPostes(self.mapCanvas, self.conn, str_tension, ftr.id(), 0, 0, 0)
-                                self.dialogo.show()
-                                return
+                                if str_tension.strip() == 'Proyectos':
+                                    from .frm_postes_proyecto import frmPostesProyecto
+                                    self.dialogo = frmPostesProyecto(self.proyecto, self.tipo_usuario, self.mapCanvas, self.conn, str_tension, ftr.id(), 0, 0, 0)
+                                    self.dialogo.show()
+                                    return
+                                else:
+                                    from .frm_postes import frmPostes
+                                    self.dialogo = frmPostes(self.tipo_usuario, self.mapCanvas, self.conn, str_tension, ftr.id(), 0, 0, 0)
+                                    self.dialogo.show()
+                                    return
                             if lyr.name() == 'Areas':
                                 from .frm_areas import frmAreas
-                                self.dialogo = frmAreas(self.mapCanvas, self.conn, '', ftr.id())
+                                self.dialogo = frmAreas(self.tipo_usuario, self.mapCanvas, self.conn, '', ftr.id())
                                 self.dialogo.show()
                                 return
                             if lyr.name() == 'Parcelas':
                                 from .frm_parcelas import frmParcelas
-                                self.dialogo = frmParcelas(self.mapCanvas, self.conn, '', ftr.id())
+                                self.dialogo = frmParcelas(self.tipo_usuario, self.mapCanvas, self.conn, '', ftr.id())
                                 self.dialogo.show()
                                 return
                             return
         pass
 
     def nodo(self):
-        #QMessageBox.information(None, 'h_nodo', str(tension))
-        tool = herrNodo(self.iface, self.iface.mapCanvas(), self.conn, self.tension)
+        tool = herrNodo(self.proyecto, self.tipo_usuario, self.iface.mapCanvas(), self.conn, self.tension)
         self.iface.mapCanvas().setMapTool(tool)
         #Cambio el cursor
         punNodo = QtGui.QPixmap(os.path.join(basepath,"icons", 'cur_nodo.png'))
@@ -295,8 +511,7 @@ class herrSeleccion(QgsMapTool):
         pass
         
     def linea(self):
-        #QMessageBox.information(None, 'h_nodo', str(tension))
-        tool = herrLinea(self.iface, self.iface.mapCanvas(), self.conn, self.tension)
+        tool = herrLinea(self.proyecto, self.tipo_usuario, self.iface.mapCanvas(), self.conn, self.tension)
         self.iface.mapCanvas().setMapTool(tool)
         #Cambio el cursor
         punLinea = QtGui.QPixmap(os.path.join(basepath,"icons", 'cur_linea.png'))
@@ -306,8 +521,7 @@ class herrSeleccion(QgsMapTool):
         pass
                
     def poste(self):
-        #QMessageBox.information(None, 'h_nodo', str(tension))
-        tool = herrPoste(self.iface, self.iface.mapCanvas(), self.conn, self.tension)
+        tool = herrPoste(self.proyecto, self.tipo_usuario, self.iface.mapCanvas(), self.conn, self.tension)
         self.iface.mapCanvas().setMapTool(tool)
         #Cambio el cursor
         punNodo = QtGui.QPixmap(os.path.join(basepath,"icons", 'cur_nodo.png'))
@@ -318,7 +532,7 @@ class herrSeleccion(QgsMapTool):
 
     def area(self):
         #QMessageBox.information(None, 'h_nodo', str(tension))
-        tool = herrArea(self.iface, self.iface.mapCanvas(), self.conn)
+        tool = herrArea(self.tipo_usuario, self.iface.mapCanvas(), self.conn)
         self.iface.mapCanvas().setMapTool(tool)
         #Cambio el cursor
         punLinea = QtGui.QPixmap(os.path.join(basepath,"icons", 'cur_linea.png'))
@@ -329,7 +543,7 @@ class herrSeleccion(QgsMapTool):
 
     def parcela(self):
         #QMessageBox.information(None, 'h_nodo', str(tension))
-        tool = herrParcela(self.iface, self.iface.mapCanvas(), self.conn)
+        tool = herrParcela(self.tipo_usuario, self.iface.mapCanvas(), self.conn)
         self.iface.mapCanvas().setMapTool(tool)
         #Cambio el cursor
         punLinea = QtGui.QPixmap(os.path.join(basepath,"icons", 'cur_linea.png'))
@@ -350,7 +564,7 @@ class herrSeleccion(QgsMapTool):
 
         str_tension = self.capa.name() [7 - len(self.capa.name()):]
         from .frm_insertar_postes import frmInsertarPostes
-        self.dialogo = frmInsertarPostes(self.mapCanvas, self.conn, str_tension, self.ftr.id(), p1, p2)
+        self.dialogo = frmInsertarPostes(self.proyecto, self.mapCanvas, self.conn, str_tension, self.ftr.id(), p1, p2)
         self.dialogo.show()
         pass
 
@@ -359,29 +573,29 @@ class herrSeleccion(QgsMapTool):
         if self.capa.name()[:5] == 'Nodos' and self.capa.name() != 'Nodos_Temp':
             str_tension = self.capa.name() [6 - len(self.capa.name()):]
             from .frm_nodos import frmNodos
-            self.dialogo = frmNodos(self.mapCanvas, self.conn, str_tension, self.ftr.id(), 0)
+            self.dialogo = frmNodos(self.tipo_usuario, self.mapCanvas, self.conn, str_tension, self.ftr.id(), 0)
             self.dialogo.show()
             pass
         if self.capa.name()[:6] == 'Lineas' and self.capa.name() != 'Lineas_Temp':
             str_tension = self.capa.name() [7 - len(self.capa.name()):]
             from .frm_lineas import frmLineas
-            self.dialogo = frmLineas(self.mapCanvas, self.conn, str_tension, 0, 0, self.ftr.geometry().length(), None, self.ftr.id())
+            self.dialogo = frmLineas(self.tipo_usuario, self.mapCanvas, self.conn, str_tension, 0, 0, self.ftr.geometry().length(), None, self.ftr.id())
             self.dialogo.show()
             pass
         if self.capa.name()[:6] == 'Postes':
             str_tension = self.capa.name() [7 - len(self.capa.name()):]
             from .frm_postes import frmPostes
-            self.dialogo = frmPostes(self.mapCanvas, self.conn, str_tension, self.ftr.id(), 0, 0, 0)
+            self.dialogo = frmPostes(self.tipo_usuario, self.mapCanvas, self.conn, str_tension, self.ftr.id(), 0, 0, 0)
             self.dialogo.show()
             pass
         if self.capa.name() == 'Areas':
             from .frm_areas import frmAreas
-            self.dialogo = frmAreas(self.mapCanvas, self.conn, '', self.ftr.id())
+            self.dialogo = frmAreas(self.tipo_usuario, self.mapCanvas, self.conn, '', self.ftr.id())
             self.dialogo.show()
             pass
         if self.capa.name() == 'Parcelas':
             from .frm_parcelas import frmParcelas
-            self.dialogo = frmParcelas(self.mapCanvas, self.conn, '', self.ftr.id())
+            self.dialogo = frmParcelas(self.tipo_usuario, self.mapCanvas, self.conn, '', self.ftr.id())
             self.dialogo.show()
             pass
 
@@ -421,7 +635,6 @@ class herrSeleccion(QgsMapTool):
 
         if capa.name()[:5] == 'Nodos':
             cursor = cnn.cursor()
-            rst = []
             cursor.execute("SELECT ISNULL(nombre, ''), ISNULL(descripcion, ''), elmt, ISNULL(val1, ''), ISNULL(val2, ''), ISNULL(val3, ''), ISNULL(val4, ''), ISNULL(val5, ''), modificacion, estado, ISNULL(uucc, '') FROM Nodos WHERE Geoname=" + str(elemento.id()))
             #convierto el cursor en array
             rst = tuple(cursor)
@@ -440,8 +653,12 @@ class herrSeleccion(QgsMapTool):
             str_update = str_update + ", uucc='" + rst[0][10] + "'"
 
             cursor = cnn.cursor()
-            cursor.execute("UPDATE Nodos SET " + str_update + " WHERE Geoname=" + str(self.ftr.id()))
-            cnn.commit()
+            try:
+                cursor.execute("UPDATE Nodos SET " + str_update + " WHERE Geoname=" + str(self.ftr.id()))
+                cnn.commit()
+            except:
+                cnn.rollback()
+                QMessageBox.information(None, 'EnerGis 5', "No se pudo actualizar !")
             QMessageBox.information(None, '', "Pegado ! Falta ver mnNodos")
 
             if rst[0][2] == 6:
@@ -449,18 +666,25 @@ class herrSeleccion(QgsMapTool):
                     QMessageBox.information(None, '', "No se moverán los usuarios del suministro, quedarán en el nodo origen")
                 else:
                     cursor = cnn.cursor()
-                    cursor.execute("UPDATE suministros SET id_nodo=" + str(self.ftr.id()) + " WHERE id_nodo=" + str(elemento.id()))
-                    cnn.commit()
+                    try:
+                        cursor.execute("UPDATE suministros SET id_nodo=" + str(self.ftr.id()) + " WHERE id_nodo=" + str(elemento.id()))
+                        cnn.commit()
+                    except:
+                        cnn.rollback()
+                        QMessageBox.information(None, 'EnerGis 5', "No se pudo actualizar !")
 
             if str_operacion == "Cortar":
                 cursor = cnn.cursor()
-                cursor.execute("UPDATE Nodos SET Nombre='', Descripcion='', elmt=0, Val1='',Val2='',Val3='',Val4='',Val5='', estado=0, uucc='' WHERE geoname=" + str(elemento.id()))
-                cnn.commit()
+                try:
+                    cursor.execute("UPDATE Nodos SET Nombre='', Descripcion='', elmt=0, Val1='',Val2='',Val3='',Val4='',Val5='', estado=0, uucc='' WHERE geoname=" + str(elemento.id()))
+                    cnn.commit()
+                except:
+                    cnn.rollback()
+                    QMessageBox.information(None, 'EnerGis 5', "No se pudo actualizar !")
                 QMessageBox.information(None, '', "Falta ver mnNodos")
 
         elif capa.name()[:6] == 'Lineas':
             cursor = cnn.cursor()
-            rst = []
             cursor.execute("SELECT elmt, fase, modificacion, exp, disposicion, conservacion, ternas, acometida, uucc FROM Lineas WHERE geoname=" + str(elemento.id()))
             #convierto el cursor en array
             rst = tuple(cursor)
@@ -483,7 +707,6 @@ class herrSeleccion(QgsMapTool):
 
         elif capa.name()[:6] == 'Postes':
             cursor = cnn.cursor()
-            rst = []
             cursor.execute("SELECT elmt, estructura, rienda, altura, modificacion, ISNULL(descripcion, ''), profundidad, tipo, aislacion, fundacion, comparte, ternas, PAT, descargadores FROM Postes WHERE Geoname=" + str(elemento.id()))
             #convierto el cursor en array
             rst = tuple(cursor)
@@ -505,8 +728,12 @@ class herrSeleccion(QgsMapTool):
             str_update = str_update + ", descargadores=" + str(rst[0][13])
 
             cursor = cnn.cursor()
-            cursor.execute("UPDATE Postes SET " + str_update + " WHERE geoname=" + str(self.ftr.id()))
-            cnn.commit()
+            try:
+                cursor.execute("UPDATE Postes SET " + str_update + " WHERE geoname=" + str(self.ftr.id()))
+                cnn.commit()
+            except:
+                cnn.rollback()
+                QMessageBox.information(None, 'EnerGis 5', "No se pudo actualizar !")
             QMessageBox.information(None, '', "Pegado !")
 
         capa.triggerRepaint()
@@ -519,50 +746,63 @@ class herrSeleccion(QgsMapTool):
         if self.capa.name()[:5] == 'Nodos' and self.capa.name()!='Nodos_Temp':
             cnn = self.conn
             cursor = cnn.cursor()
-            cursor.execute("DELETE FROM Nodos WHERE geoname=" + str(self.ftr.id()))
-            cnn.commit()
+            try:
+                cursor.execute("DELETE FROM Nodos WHERE geoname=" + str(self.ftr.id()))
+                cnn.commit()
+            except:
+                cnn.rollback()
+                QMessageBox.information(None, 'EnerGis 5', "No se pudo actualizar !")
             self.capa.triggerRepaint()
             return
 
         if self.capa.name()[:6] == 'Lineas' and self.capa.name()!='Lineas_Temp':
             cnn = self.conn
             cursor = cnn.cursor()
-            cursor.execute("DELETE FROM Lineas WHERE geoname=" + str(self.ftr.id()))
-            cnn.commit()
+            try:
+                cursor.execute("DELETE FROM Lineas WHERE geoname=" + str(self.ftr.id()))
+                cnn.commit()
+            except:
+                cnn.rollback()
+                QMessageBox.information(None, 'EnerGis 5', "No se pudieron borrar Lineas !")
             self.capa.triggerRepaint()
             return
 
         if self.capa.name()[:6] == 'Postes':
             cnn = self.conn
             cursor = cnn.cursor()
-            cursor.execute("DELETE FROM Postes WHERE geoname=" + str(self.ftr.id()))
-            cnn.commit()
+            try:
+                cursor.execute("DELETE FROM Postes WHERE geoname=" + str(self.ftr.id()))
+                cnn.commit()
+            except:
+                cnn.rollback()
+                QMessageBox.information(None, 'EnerGis 5', "No se pudieron borrar Postes !")
             self.capa.triggerRepaint()
             return
 
         if self.capa.name() == 'Areas':
             cnn = self.conn
             cursor = cnn.cursor()
-            cursor.execute("DELETE FROM Areas WHERE geoname=" + str(self.ftr.id()))
-            cnn.commit()
+            try:
+                cursor.execute("DELETE FROM Areas WHERE geoname=" + str(self.ftr.id()))
+                cnn.commit()
+            except:
+                cnn.rollback()
             self.capa.triggerRepaint()
+            QMessageBox.information(None, 'EnerGis 5', "No se pudieron borrar Areas !")
             return
 
         if self.capa.name() == 'Parcelas':
             cnn = self.conn
             cursor = cnn.cursor()
-            cursor.execute("DELETE FROM Parcelas WHERE geoname=" + str(self.ftr.id()))
-            cnn.commit()
+            try:
+                cursor.execute("DELETE FROM Parcelas WHERE geoname=" + str(self.ftr.id()))
+                cnn.commit()
+            except:
+                cnn.rollback()
+                QMessageBox.information(None, 'EnerGis 5', "No se pudieron borrar Parcelas !")
             self.capa.triggerRepaint()
             return
 
-        if self.capa.name() == 'Ejes':
-            cnn = self.conn
-            cursor = cnn.cursor()
-            cursor.execute("DELETE FROM Ejes WHERE geoname=" + str(self.ftr.id()))
-            cnn.commit()
-            self.capa.triggerRepaint()
-            return
         pass
 
     def zoomIn(self):

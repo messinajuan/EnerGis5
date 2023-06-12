@@ -40,8 +40,6 @@ class frmElegirUUCC(DialogType, DialogBase):
     def inicio(self):
         cnn = self.conn
         cursor = cnn.cursor()
-        recordset = []
-        #1 "SELECT Familia, Tipo_Instalacion, Codigo, Descripcion FROM UUCC WHERE Nivel_Tension=" + str(self.tension) + " AND " + self.where)
         cursor.execute("SELECT Familia, Tipo_Instalacion, Codigo, Descripcion FROM UUCC WHERE Nivel_Tension IN (" + str(self.tension) + ") AND " + self.where)
         #convierto el cursor en array
         recordset = tuple(cursor)

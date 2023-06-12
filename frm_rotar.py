@@ -11,7 +11,7 @@
 #---------------------------------------------------------------------
 
 import os
-#from PyQt5.QtWidgets import QMessageBox
+from PyQt5.QtWidgets import QMessageBox
 from qgis.core import QgsMapLayerType, QgsPoint, QgsFeature
 from PyQt5.QtGui import QIcon
 from PyQt5.QtGui import QDoubleValidator
@@ -23,7 +23,7 @@ basepath = os.path.dirname(os.path.realpath(__file__))
 
 class frmRotar(DialogType, DialogBase):
         
-    def __init__(self, mapCanvas, conn, ftrs_nodos, ftrs_lineas, ftrs_postes, ftrs_areas, ftrs_parcelas, pc):
+    def __init__(self, mapCanvas, conn, ftrs_nodos, ftrs_lineas, ftrs_postes, ftrs_areas, ftrs_parcelas, ftrs_ejes, pc):
         super().__init__()
         self.setupUi(self)
         self.setFixedSize(self.size())
@@ -34,6 +34,7 @@ class frmRotar(DialogType, DialogBase):
         self.ftrs_postes = ftrs_postes
         self.ftrs_areas = ftrs_areas
         self.ftrs_parcelas = ftrs_parcelas
+        self.ftrs_ejes = ftrs_ejes
         self.pc = pc
         vfloat = QDoubleValidator()
         self.txtAngulo.setValidator(vfloat)
@@ -72,8 +73,12 @@ class frmRotar(DialogType, DialogBase):
                         if mx!=0 or my!=0:
                             cnn = self.conn
                             cursor = cnn.cursor()
-                            cursor.execute("mover_nodo " + str(ftr.id()) + ', ' + str(mx) + ', ' + str(my))
-                            cnn.commit()
+                            try:
+                                cursor.execute("mover_nodo " + str(ftr.id()) + ', ' + str(mx) + ', ' + str(my))
+                                cnn.commit()
+                            except:
+                                cnn.rollback()
+                                QMessageBox.information(None, 'EnerGis 5', 'No se pudieron mover Nodos')
                             lyr.triggerRepaint()
 
                 if (lyr.name()[:6] == 'Lineas' and lyr.name() != 'Lineas_Temp'):
@@ -89,9 +94,35 @@ class frmRotar(DialogType, DialogBase):
                             mx, my = self.calcular_giro(vertice.x(), vertice.y(), pc.x(), pc.y(), angulo, sentido)
                             cnn = self.conn
                             cursor = cnn.cursor()
-                            cursor.execute("mover_linea " + str(ftr.id()) + ', ' + str(i) + ', ' + str(mx) + ', ' + str(my))
-                            cnn.commit()
+                            try:
+                                cursor.execute("mover_linea " + str(ftr.id()) + ', ' + str(i) + ', ' + str(mx) + ', ' + str(my))
+                                cnn.commit()
+                            except:
+                                cnn.rollback()
+                                QMessageBox.information(None, 'EnerGis 5', 'No se pudieron mover Lineas')
                             lyr.triggerRepaint()
+
+                if lyr.name() == 'Ejes de Calle':
+                    ftrs = lyr.getFeatures(self.ftrs_ejes)
+                    for ftr in ftrs:
+                        vertices  = ftr.geometry().asPolyline()
+                        m = len(vertices)
+                        #QMessageBox.information(None, 'vertices', str(m))
+                        for i in range(m):
+                            vertice=QgsPoint(vertices [i][0],vertices [i][1])
+                            v = QgsFeature()
+                            v.setGeometry(vertice)
+                            mx, my = self.calcular_giro(vertice.x(), vertice.y(), pc.x(), pc.y(), angulo, sentido)
+                            cnn = self.conn
+                            cursor = cnn.cursor()
+                            try:
+                                cursor.execute("mover_eje " + str(ftr.id()) + ', ' + str(i + 1) + ', ' + str(mx) + ', ' + str(my))
+                                cnn.commit()
+                            except:
+                                cnn.rollback()
+                                QMessageBox.information(None, 'EnerGis 5', 'No se pudieron mover Ejes')
+                            lyr.triggerRepaint()
+
 
                 if lyr.name()[:6] == 'Postes':
                     ftrs = lyr.getFeatures(self.ftrs_postes)
@@ -100,8 +131,12 @@ class frmRotar(DialogType, DialogBase):
                         if mx!=0 or my!=0:
                             cnn = self.conn
                             cursor = cnn.cursor()
-                            cursor.execute("mover_poste " + str(ftr.id()) + ', ' + str(mx) + ', ' + str(my))
-                            cnn.commit()
+                            try:
+                                cursor.execute("mover_poste " + str(ftr.id()) + ', ' + str(mx) + ', ' + str(my))
+                                cnn.commit()
+                            except:
+                                cnn.rollback()
+                                QMessageBox.information(None, 'EnerGis 5', 'No se pudieron mover Postes')
                             lyr.triggerRepaint()
 
                 if lyr.name() == 'Areas':
@@ -116,8 +151,12 @@ class frmRotar(DialogType, DialogBase):
                             mx, my = self.calcular_giro(vertice.x(), vertice.y(), pc.x(), pc.y(), angulo, sentido)
                             cnn = self.conn
                             cursor = cnn.cursor()
-                            cursor.execute("mover_area " + str(ftr.id()) + ', ' + str(i) + ', ' + str(mx) + ', ' + str(my))
-                            cnn.commit()
+                            try:
+                                cursor.execute("mover_area " + str(ftr.id()) + ', ' + str(i) + ', ' + str(mx) + ', ' + str(my))
+                                cnn.commit()
+                            except:
+                                cnn.rollback()
+                                QMessageBox.information(None, 'EnerGis 5', 'No se pudieron mover Areas')
                             lyr.triggerRepaint()
 
                 if lyr.name() == 'Parcelas':
@@ -132,8 +171,12 @@ class frmRotar(DialogType, DialogBase):
                             mx, my = self.calcular_giro(vertice.x(), vertice.y(), pc.x(), pc.y(), angulo, sentido)
                             cnn = self.conn
                             cursor = cnn.cursor()
-                            cursor.execute("mover_parcela " + str(ftr.id()) + ', ' + str(i) + ', ' + str(mx) + ', ' + str(my))
-                            cnn.commit()
+                            try:
+                                cursor.execute("mover_parcela " + str(ftr.id()) + ', ' + str(i) + ', ' + str(mx) + ', ' + str(my))
+                                cnn.commit()
+                            except:
+                                cnn.rollback()
+                                QMessageBox.information(None, 'EnerGis 5', 'No se pudieron mover Parcelas')
                             lyr.triggerRepaint()
 
         n = self.mapCanvas.layerCount()

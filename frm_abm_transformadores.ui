@@ -207,6 +207,9 @@
     </property>
    </widget>
    <widget class="QDateEdit" name="datNormalizacion">
+    <property name="enabled">
+     <bool>true</bool>
+    </property>
     <property name="geometry">
      <rect>
       <x>360</x>
@@ -216,6 +219,9 @@
      </rect>
     </property>
     <property name="readOnly">
+     <bool>false</bool>
+    </property>
+    <property name="calendarPopup">
      <bool>true</bool>
     </property>
    </widget>
@@ -517,6 +523,9 @@ del usuario</string>
    <property name="text">
     <string>Aceptar</string>
    </property>
+   <property name="shortcut">
+    <string>Return</string>
+   </property>
   </widget>
   <widget class="QPushButton" name="cmdSalir">
    <property name="geometry">
@@ -529,6 +538,9 @@ del usuario</string>
    </property>
    <property name="text">
     <string>Salir</string>
+   </property>
+   <property name="shortcut">
+    <string>Esc</string>
    </property>
   </widget>
   <widget class="QLabel" name="label_26">

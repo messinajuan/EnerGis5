@@ -11,7 +11,7 @@
 #---------------------------------------------------------------------
 
 import os
-#from PyQt5.QtWidgets import QMessageBox
+from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtGui import QDoubleValidator
 from PyQt5 import uic
 
@@ -19,10 +19,11 @@ DialogBase, DialogType = uic.loadUiType(os.path.join(os.path.dirname(__file__),'
 
 class frmBloques(DialogType, DialogBase):
         
-    def __init__(self, conn, id):
+    def __init__(self, tipo_usuario, conn, id):
         super().__init__()
         self.setupUi(self)
         self.setFixedSize(self.size())
+        self.tipo_usuario = tipo_usuario
         self.conn = conn
         self.id = id
         vfloat = QDoubleValidator()
@@ -30,21 +31,20 @@ class frmBloques(DialogType, DialogBase):
         self.txtI2.setValidator(vfloat)
         self.txtV1.setValidator(vfloat)
         self.txtV2.setValidator(vfloat)
-        self.inicio()
-        pass
 
-    def inicio(self):
+        if self.tipo_usuario==4:
+            self.cmdAceptar.setEnabled(False)
 
-        self.cmbFuncionI.addItem("Medición")
-        self.cmbFuncionI.addItem("Protección")
-        self.cmbFuncionI.addItem("Medición y Protección")
+        self.cmbFuncionI.addItem("Medicion")
+        self.cmbFuncionI.addItem("Proteccion")
+        self.cmbFuncionI.addItem("Medicion y Proteccion")
 
         self.cmbTecnologiaI.addItem("Inductivo")
         self.cmbTecnologiaI.addItem("Otro")
 
         self.cmbFuncionV.addItem("Medición")
         self.cmbFuncionV.addItem("Protección")
-        self.cmbFuncionV.addItem("Medición y Protección")
+        self.cmbFuncionV.addItem("Medicion y Proteccion")
 
         self.cmbTecnologiaV.addItem("Inductivo")
         self.cmbTecnologiaV.addItem("Otro")
@@ -56,7 +56,6 @@ class frmBloques(DialogType, DialogBase):
 
         cnn = self.conn
         cursor = cnn.cursor()
-        rs = []
         cursor.execute("SELECT i1, i2, funcioni, tecnologiai, v1, v2, funcionv, tecnologiav, montaje, combinado FROM Bloques WHERE id_usuario=" + str(self.id))
         #convierto el cursor en array
         rs = tuple(cursor)
@@ -94,8 +93,13 @@ class frmBloques(DialogType, DialogBase):
         else:
             cnn = self.conn
             cursor = cnn.cursor()
-            cursor.execute("INSERT INTO Bloques (id_usuario) VALUES (" + str(self.id) + ")")
-            cnn.commit()
+            try:
+                cursor.execute("INSERT INTO Bloques (id_usuario) VALUES (" + str(self.id) + ")")
+                cnn.commit()
+            except:
+                cnn.rollback()
+                QMessageBox.information(None, 'EnerGis 5', "No se pudo insertar !")
+            pass
 
         self.cmdAceptar.clicked.connect(self.aceptar)
         self.cmdSalir.clicked.connect(self.salir)
@@ -127,9 +131,13 @@ class frmBloques(DialogType, DialogBase):
         #QMessageBox.information(None, 'EnerGis 5', str_set)
         cnn = self.conn
         cursor = cnn.cursor()
-        cursor.execute("UPDATE Bloques SET " + str_set + " WHERE id_usuario=" + str(self.id))
-        cnn.commit()
-        #QMessageBox.information(None, 'EnerGis 5', str_set)
+        try:
+            cursor.execute("UPDATE Bloques SET " + str_set + " WHERE id_usuario=" + str(self.id))
+            cnn.commit()
+        except:
+            cnn.rollback()
+            QMessageBox.information(None, 'EnerGis 5', "No se pudo actualizar !")
+        pass
         self.close()
         pass
 

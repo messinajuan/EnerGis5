@@ -11,7 +11,7 @@
 #---------------------------------------------------------------------
 
 import os
-#from PyQt5.QtWidgets import QMessageBox
+from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtGui import QIcon
 from PyQt5.QtGui import QDoubleValidator
 from PyQt5 import uic
@@ -21,7 +21,7 @@ basepath = os.path.dirname(os.path.realpath(__file__))
 
 class frmMover(DialogType, DialogBase):
         
-    def __init__(self, mapCanvas, conn, ftrs_nodos, ftrs_lineas, ftrs_postes, ftrs_areas, ftrs_parcelas):
+    def __init__(self, mapCanvas, conn, ftrs_nodos, ftrs_lineas, ftrs_postes, ftrs_areas, ftrs_parcelas, ftrs_ejes):
         super().__init__()
         self.setupUi(self)
         self.setFixedSize(self.size())
@@ -32,6 +32,7 @@ class frmMover(DialogType, DialogBase):
         self.ftrs_postes = ftrs_postes
         self.ftrs_areas = ftrs_areas
         self.ftrs_parcelas = ftrs_parcelas
+        self.ftrs_ejes = ftrs_ejes
         vfloat = QDoubleValidator()
         self.txtDistancia.setValidator(vfloat)
         self.inicio()
@@ -112,36 +113,67 @@ class frmMover(DialogType, DialogBase):
             cnn = self.conn
             cnn.autocommit = False
             cursor = cnn.cursor()
-            cursor.execute("mover_nodo " + str(self.ftrs_nodos[i]) + ', ' + str(mx) + ', ' + str(my))
-            cnn.commit()
+            try:
+                cursor.execute("mover_nodo " + str(self.ftrs_nodos[i]) + ', ' + str(mx) + ', ' + str(my))
+                cnn.commit()
+            except:
+                cnn.rollback()
+                QMessageBox.information(None, 'EnerGis 5', 'No se pudieron mover Nodos')
 
         for i in range (0, len(self.ftrs_lineas)):
             cnn = self.conn
             cnn.autocommit = False
             cursor = cnn.cursor()
-            cursor.execute("mover_linea " + str(self.ftrs_lineas[i]) + ',0 , ' + str(mx) + ', ' + str(my))
-            cnn.commit()
+            try:
+                cursor.execute("mover_linea " + str(self.ftrs_lineas[i]) + ',0 , ' + str(mx) + ', ' + str(my))
+                cnn.commit()
+            except:
+                cnn.rollback()
+                QMessageBox.information(None, 'EnerGis 5', 'No se pudieron mover Lineas')
+
+        for i in range (0, len(self.ftrs_ejes)):
+            cnn = self.conn
+            cnn.autocommit = False
+            cursor = cnn.cursor()
+            try:
+                cursor.execute("mover_eje " + str(self.ftrs_ejes[i]) + ',0 , ' + str(mx) + ', ' + str(my))
+                cnn.commit()
+            except:
+                cnn.rollback()
+                QMessageBox.information(None, 'EnerGis 5', 'No se pudieron mover Ejes')
 
         for i in range (0, len(self.ftrs_postes)):
             cnn = self.conn
             cnn.autocommit = False
             cursor = cnn.cursor()
-            cursor.execute("mover_poste " + str(self.ftrs_postes[i]) + ', ' + str(mx) + ', ' + str(my))
-            cnn.commit()
+            try:
+                cursor.execute("mover_poste " + str(self.ftrs_postes[i]) + ', ' + str(mx) + ', ' + str(my))
+                cnn.commit()
+            except:
+                cnn.rollback()
+                QMessageBox.information(None, 'EnerGis 5', 'No se pudieron mover Postes')
 
         for i in range (0, len(self.ftrs_areas)):
             cnn = self.conn
             cnn.autocommit = False
             cursor = cnn.cursor()
-            cursor.execute("mover_area " + str(self.ftrs_areas[i]) + ',-1 , ' + str(mx) + ', ' + str(my))
-            cnn.commit()
+            try:
+                cursor.execute("mover_area " + str(self.ftrs_areas[i]) + ',-1 , ' + str(mx) + ', ' + str(my))
+                cnn.commit()
+            except:
+                cnn.rollback()
+                QMessageBox.information(None, 'EnerGis 5', 'No se pudieron mover Areas')
 
         for i in range (0, len(self.ftrs_parcelas)):
             cnn = self.conn
             cnn.autocommit = False
             cursor = cnn.cursor()
-            cursor.execute("mover_parcela " + str(self.ftrs_parcelas[i]) + ',-1 , ' + str(mx) + ', ' + str(my))
-            cnn.commit()
+            try:
+                cursor.execute("mover_parcela " + str(self.ftrs_parcelas[i]) + ',-1 , ' + str(mx) + ', ' + str(my))
+                cnn.commit()
+            except:
+                cnn.rollback()
+                QMessageBox.information(None, 'EnerGis 5', 'No se pudieron mover Parcelas')
 
         n = self.mapCanvas.layerCount()
         layers = [self.mapCanvas.layer(i) for i in range(n)]

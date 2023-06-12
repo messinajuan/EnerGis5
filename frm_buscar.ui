@@ -94,6 +94,9 @@
     <iconset>
      <normaloff>icons/img_buscar.png</normaloff>icons/img_buscar.png</iconset>
    </property>
+   <property name="shortcut">
+    <string>Return</string>
+   </property>
    <property name="default">
     <bool>true</bool>
    </property>

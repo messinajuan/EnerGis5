@@ -43,7 +43,6 @@ class frmReasignarPostes(DialogType, DialogBase):
         self.cmbCapa.addItem('Todas')
         cnn = self.conn
         cursor = cnn.cursor()
-        tensiones = []
         cursor.execute("SELECT Tension FROM Niveles_Tension WHERE Tension>=200")
         #convierto el cursor en array
         tensiones = tuple(cursor)
@@ -61,7 +60,6 @@ class frmReasignarPostes(DialogType, DialogBase):
         self.cmbNuevaEstructura.addItem('<No Modificar>')
 
         cursor = cnn.cursor()
-        rows = []
         cursor.execute("SELECT id, descripcion FROM Estructuras")
         #convierto el cursor en array
         rows = tuple(cursor)
@@ -73,7 +71,6 @@ class frmReasignarPostes(DialogType, DialogBase):
 
         self.cmbPoste.addItem('<No Modificar>')
         cursor = cnn.cursor()
-        rows = []
         cursor.execute("SELECT id, descripcion, estilo FROM Elementos_Postes")
         #convierto el cursor en array
         rows = tuple(cursor)
@@ -98,7 +95,6 @@ class frmReasignarPostes(DialogType, DialogBase):
 
         self.cmbRienda.addItem('<No Modificar>')
         cursor = cnn.cursor()
-        rows = []
         cursor.execute("SELECT id, descripcion FROM Riendas")
         #convierto el cursor en array
         rows = tuple(cursor)
@@ -199,12 +195,15 @@ class frmReasignarPostes(DialogType, DialogBase):
         reply = QMessageBox.question(None, 'EnerGis 5', 'Desea cambiar los datos de los postes seleccionados?', QMessageBox.Yes, QMessageBox.No)
         if reply == QMessageBox.No:
             return
-        #QMessageBox.information(None, 'EnerGis 5', str_set)
-        #QMessageBox.information(None, 'EnerGis 5', str_where)
+
         cnn = self.conn
         cursor = cnn.cursor()
-        cursor.execute("UPDATE Postes SET " + str_set + " WHERE " + str_where)
-        cnn.commit()
+        try:
+            cursor.execute("UPDATE Postes SET " + str_set + " WHERE " + str_where)
+            cnn.commit()
+        except:
+            cnn.rollback()
+            QMessageBox.information(None, 'EnerGis 5', 'No se pudo actualizar la Base de Datos')
         pass
 
     def salir(self):

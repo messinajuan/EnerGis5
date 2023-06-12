@@ -11,25 +11,24 @@
 #---------------------------------------------------------------------
 
 import os
-#from PyQt5.QtWidgets import QMessageBox
+from PyQt5.QtWidgets import QMessageBox
 from PyQt5 import uic
 
 DialogBase, DialogType = uic.loadUiType(os.path.join(os.path.dirname(__file__),'frm_seccionadores.ui'))
 
 class frmSeccionadores(DialogType, DialogBase):
         
-    def __init__(self, conn, tension, geoname):
+    def __init__(self, tipo_usuario, conn, tension, geoname):
         super().__init__()
         self.setupUi(self)
         self.setFixedSize(self.size())
+        self.tipo_usuario = tipo_usuario
         self.conn = conn
         self.tension = tension
         self.geoname = geoname
 
-        self.inicio()
-        pass
-
-    def inicio(self):
+        if self.tipo_usuario==4:
+            self.cmdAceptar.setEnabled(False)
 
         self.liwTipo.addItem("Interruptor")
         self.liwTipo.addItem("Seccionador")
@@ -39,91 +38,51 @@ class frmSeccionadores(DialogType, DialogBase):
             self.liwTipo.addItem("Fusible")
         self.liwTipo.addItem("Otro")
 
-        self.cmbCorriente.addItem("0.5")
-        self.cmbCorriente.addItem("1")
-        self.cmbCorriente.addItem("2")
-        self.cmbCorriente.addItem("4")
-        self.cmbCorriente.addItem("6")
-        self.cmbCorriente.addItem("10")
-        self.cmbCorriente.addItem("16")
-        self.cmbCorriente.addItem("20")
-        self.cmbCorriente.addItem("25")
-        self.cmbCorriente.addItem("32")
-        self.cmbCorriente.addItem("35")
-        self.cmbCorriente.addItem("40")
-        self.cmbCorriente.addItem("50")
-        self.cmbCorriente.addItem("63")
-        self.cmbCorriente.addItem("80")
-        self.cmbCorriente.addItem("100")
-        self.cmbCorriente.addItem("125")
-        self.cmbCorriente.addItem("160")
-        self.cmbCorriente.addItem("200")
-        self.cmbCorriente.addItem("224")
-        self.cmbCorriente.addItem("250")
-        self.cmbCorriente.addItem("315")
-        self.cmbCorriente.addItem("355")
-        self.cmbCorriente.addItem("400")
-        self.cmbCorriente.addItem("500")
-        self.cmbCorriente.addItem("630")
-        self.cmbCorriente.addItem("800")
-        self.cmbCorriente.addItem("1000")
-        self.cmbCorriente.addItem("1250")
-        self.cmbCorriente.addItem("1600")
-        self.cmbCorriente.addItem("2000")
-        self.cmbCorriente.addItem("2500")
-        self.cmbCorriente.addItem("3150")
-        self.cmbCorriente.addItem("4000")
-        self.cmbCorriente.addItem("5000")
+        corriente = [0.5,1,2,4,6,10,16,20,25,32,35,40,50,63,80,100,125,160,200,224,250,315,355,400,500,630,800,1000,1250,1600,2000,2500,3150,4000,5000]
+        for c in corriente:
+            self.cmbCorriente.addItem(str(c))
 
-        self.cmbPoderCorte.addItem("0")
-        self.cmbPoderCorte.addItem("16")
-        self.cmbPoderCorte.addItem("20")
-        self.cmbPoderCorte.addItem("25")
-        self.cmbPoderCorte.addItem("31.5")
-        self.cmbPoderCorte.addItem("36")
-        self.cmbPoderCorte.addItem("40")
-        self.cmbPoderCorte.addItem("45")
-        self.cmbPoderCorte.addItem("50")
-        self.cmbPoderCorte.addItem("63")
-        self.cmbPoderCorte.addItem("70")
-        self.cmbPoderCorte.addItem("75")
-        self.cmbPoderCorte.addItem("80")
-        self.cmbPoderCorte.addItem("100")
+        poder_corte = [0,16,20,25,31.5,36,40,45,50,63,70,75,80,100]
+        for c in poder_corte:
+            self.cmbPoderCorte.addItem(str(c))
 
         self.liwTipo.currentRowChanged.connect(self.elegir_aparato)
 
         cnn = self.conn
         cursor = cnn.cursor()
-        rs = []
-        cursor.execute("SELECT Val1, LEFT(Nodos.Val2,15), LEFT(RIGHT(Nodos.Val2,35),5), LEFT(RIGHT(Nodos.Val2,30),15), RIGHT(Nodos.Val2,15), Val4, UUCC FROM Nodos WHERE geoname=" + str(self.geoname))
+        cursor.execute("SELECT Val1 AS Elemento, LEFT(Nodos.Val2,15) AS SubTipo, LEFT(RIGHT(Nodos.Val2,35),5) AS Corriente, LEFT(RIGHT(Nodos.Val2,30),15) AS Marca, RIGHT(Nodos.Val2,15) AS Modelo, Val5 AS Poder_Corte, Val4 AS Descargador, Val3 AS Tele FROM Nodos WHERE geoname=" + str(self.geoname))
         #convierto el cursor en array
         rs = tuple(cursor)
         cursor.close()
-
+        #elemento
         for i in range (0, self.liwTipo.count()):
             if self.liwTipo.item(i).text() == str(rs[0][0]).strip():
                 self.liwTipo.setCurrentRow(i)
                 self.liwTipo.setFocus()
-
+        #subtipo
         for i in range (0, self.cmbParametro1.count()):
             if self.cmbParametro1.itemText(i) == str(rs[0][1]).strip():
                 self.cmbParametro1.setCurrentIndex(i)
-
-        for i in range (0, self.cmbPoderCorte.count()):
-            if self.cmbPoderCorte.itemText(i) == str(rs[0][2]).strip():
-                self.cmbPoderCorte.setCurrentIndex(i)
-
+        #corriente
+        for i in range (0, self.cmbCorriente.count()):
+            if self.cmbCorriente.itemText(i) == str(rs[0][2]).strip():
+                self.cmbCorriente.setCurrentIndex(i)
+        #marca
         for i in range (0, self.cmbParametro2.count()):
             if self.cmbParametro2.itemText(i) == str(rs[0][3]).strip():
                 self.cmbParametro2.setCurrentIndex(i)
-
+        #modelo
         for i in range (0, self.cmbParametro3.count()):
             if self.cmbParametro3.itemText(i) == str(rs[0][4]).strip():
                 self.cmbParametro3.setCurrentIndex(i)
+        #poder_corte
+        for i in range (0, self.cmbPoderCorte.count()):
+            if self.cmbPoderCorte.itemText(i) == str(rs[0][5]).strip():
+                self.cmbPoderCorte.setCurrentIndex(i)
 
-        if rs[0][5]=="Aereo-Subt":
+        if rs[0][6]=="Aereo-Subt":
             self.chkDescargadores.setChecked(True)
-        self.txtUUCC.setText(rs[0][6])
+        self.txtUUCC.setText(rs[0][7])
 
         self.cmdAceptar.clicked.connect(self.aceptar)
         self.cmdUUCC.clicked.connect(self.uucc)
@@ -196,7 +155,6 @@ class frmSeccionadores(DialogType, DialogBase):
         #'15 - 5 - 15 - 15
         cnn = self.conn
         cursor = cnn.cursor()
-        rs = []
         cursor.execute("SELECT LEFT(Nodos.Val2,15) FROM Nodos WHERE Nodos.Val1='" + self.liwTipo.currentItem().text() + "' AND (Elmt=2 OR Elmt=3) AND Nodos.Val2 <> '' GROUP BY LEFT(Nodos.Val2,15)")
         #convierto el cursor en array
         rs = tuple(cursor)
@@ -212,7 +170,6 @@ class frmSeccionadores(DialogType, DialogBase):
 
         cnn = self.conn
         cursor = cnn.cursor()
-        rs = []
         cursor.execute("SELECT LEFT(RIGHT(Nodos.Val2,35),5) FROM Nodos WHERE Nodos.Val1='" + self.liwTipo.currentItem().text() + "' AND (Elmt=2 OR Elmt=3) AND Nodos.Val2 <> '' GROUP BY LEFT(RIGHT(Nodos.Val2,35),5)")
         #convierto el cursor en array
         rs = tuple(cursor)
@@ -220,15 +177,14 @@ class frmSeccionadores(DialogType, DialogBase):
 
         for i in range (0, len(rs)):
             b_existe = False
-            for j in range (0, self.cmbPoderCorte.count()):
-                if self.cmbPoderCorte.itemText(j) == rs[0][0].strip() or self.cmbPoderCorte.itemText(j) == rs[0][0].strip() + ' *':
+            for j in range (0, self.cmbCorriente.count()):
+                if self.cmbCorriente.itemText(j) == rs[0][0].strip() or self.cmbCorriente.itemText(j) == rs[0][0].strip() + ' *':
                     b_existe=True
             if b_existe==False:
-                self.cmbPoderCorte.addItem (rs[0][0].strip() + ' *')
+                self.cmbCorriente.addItem (rs[0][0].strip() + ' *')
 
         cnn = self.conn
         cursor = cnn.cursor()
-        rs = []
         cursor.execute("SELECT LEFT(RIGHT(Nodos.Val2,30),15) FROM Nodos WHERE Nodos.Val1='" + self.liwTipo.currentItem().text() + "' AND (Elmt=2 OR Elmt=3) AND Nodos.Val2 <> '' GROUP BY LEFT(RIGHT(Nodos.Val2,30),15)")
         #convierto el cursor en array
         rs = tuple(cursor)
@@ -244,7 +200,6 @@ class frmSeccionadores(DialogType, DialogBase):
 
         cnn = self.conn
         cursor = cnn.cursor()
-        rs = []
         cursor.execute("SELECT RIGHT(Nodos.Val2,15) FROM Nodos WHERE Nodos.Val1='" + self.liwTipo.currentItem().text() + "' AND (Elmt=2 OR Elmt=3) AND Nodos.Val2 <> '' GROUP BY RIGHT(Nodos.Val2,15)")
         #convierto el cursor en array
         rs = tuple(cursor)
@@ -258,6 +213,23 @@ class frmSeccionadores(DialogType, DialogBase):
             if b_existe==False:
                 self.cmbParametro3.addItem (rs[0][0].strip() + ' *')
 
+
+        cnn = self.conn
+        cursor = cnn.cursor()
+        cursor.execute("SELECT ISNULL(Val4, 0) FROM Nodos WHERE Nodos.Val1='" + self.liwTipo.currentItem().text() + "' AND (Elmt=2 OR Elmt=3) AND Nodos.Val2 <> '' GROUP BY Val4")
+        #convierto el cursor en array
+        rs = tuple(cursor)
+        cursor.close()
+
+        for i in range (0, len(rs)):
+            b_existe = False
+            for j in range (0, self.cmbPoderCorte.count()):
+                if self.cmbPoderCorte.itemText(j) == rs[0][0].strip() or self.cmbPoderCorte.itemText(j) == rs[0][0].strip() + ' *':
+                    b_existe=True
+            if b_existe==False:
+                self.cmbPoderCorte.addItem (rs[0][0].strip() + ' *')
+
+
     def aceptar(self):
         if self.geoname==0:
             return
@@ -268,7 +240,7 @@ class frmSeccionadores(DialogType, DialogBase):
         val = "               " + self.cmbParametro1.currentText().strip()
         val = val[-15:]
         val2 = val
-        val = "     " + self.cmbPoderCorte.currentText().strip()
+        val = "     " + self.cmbCorriente.currentText().strip()
         val = val[-5:]
         val2 = val2 + val
         val = "               " + self.cmbParametro2.currentText().strip()
@@ -285,11 +257,16 @@ class frmSeccionadores(DialogType, DialogBase):
             str_set = str_set + ", Val4='Aereo-Subt'"
         else:
             str_set = str_set + ", Val4=''"
+        str_set = str_set + ", Val5='" + self.cmbPoderCorte.currentText().strip() + "'"
 
         #QMessageBox.information(None, 'EnerGis 5', str_set)
-        cursor.execute("UPDATE Nodos SET " + str_set + " WHERE Geoname=" + str(self.geoname))
-        cnn.commit()
-        #QMessageBox.information(None, 'EnerGis 5', str_set)
+        try:
+            cursor.execute("UPDATE Nodos SET " + str_set + " WHERE Geoname=" + str(self.geoname))
+            cnn.commit()
+        except:
+            cnn.rollback()
+            QMessageBox.information(None, 'EnerGis 5', 'No se pudo actualizar')
+
         self.close()
         pass
 

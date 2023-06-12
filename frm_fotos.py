@@ -22,16 +22,20 @@ DialogBase, DialogType = uic.loadUiType(os.path.join(os.path.dirname(__file__),'
 
 class frmFotos(DialogType, DialogBase):
 
-    def __init__(self, conn, geoname):
+    def __init__(self, tipo_usuario, conn, geoname):
         super().__init__()
         self.setupUi(self)
         #self.setFixedSize(self.size())
+        self.tipo_usuario = tipo_usuario
         self.conn = conn
         self.geoname = geoname
 
+        if self.tipo_usuario==4:
+            self.cmdAgregar.setEnabled(False)
+            self.cmdBorrar.setEnabled(False)
+
         cnn = self.conn
         cursor = cnn.cursor()
-        self.fotos = []
         cursor.execute("SELECT nombre, imagen, id FROM Fotos WHERE Geoname=" + str(self.geoname))
         #convierto el cursor en array
         self.fotos = tuple(cursor)
@@ -63,9 +67,13 @@ class frmFotos(DialogType, DialogBase):
         f.close
 
         cnn = self.conn
-        sql = "INSERT INTO Fotos (geoname, nombre, imagen) VALUES (?,?,?)"
-        cnn.cursor().execute(sql, (self.geoname, nombre, pyodbc.Binary(bindata)))
-        cnn.commit()
+        try:
+            sql = "INSERT INTO Fotos (geoname, nombre, imagen) VALUES (?,?,?)"
+            cnn.cursor().execute(sql, (self.geoname, nombre, pyodbc.Binary(bindata)))
+            cnn.commit()
+        except:
+            cnn.rollback()
+            QMessageBox.information(None, 'EnerGis 5', 'No se pudo insertar')
 
         pixmap = QPixmap(fname[0])
         self.lblFoto.setPixmap(pixmap.scaled(self.lblFoto.size(), QtCore.Qt.KeepAspectRatio))
@@ -96,8 +104,12 @@ class frmFotos(DialogType, DialogBase):
         reply = QMessageBox.question(None, 'EnerGis 5', 'Desea borrar la foto seleccionada ?', QMessageBox.Yes, QMessageBox.No)
         if reply == QMessageBox.Yes:
             cursor = self.conn.cursor()
-            cursor.execute("DELETE FROM Fotos WHERE Id=" + str(self.fotos[self.hslFotos.value()-1][2]))
-            self.conn.commit()
+            try:
+                cursor.execute("DELETE FROM Fotos WHERE Id=" + str(self.fotos[self.hslFotos.value()-1][2]))
+                self.conn.commit()
+            except:
+                self.conn.rollback()
+                QMessageBox.information(None, 'EnerGis 5', 'No se pudo borrar')
             self.lblFoto.clear()
             self.actualizo_fotos()
         pass
@@ -105,7 +117,6 @@ class frmFotos(DialogType, DialogBase):
     def actualizo_fotos(self):
         cnn = self.conn
         cursor = cnn.cursor()
-        self.fotos = []
         cursor.execute("SELECT nombre, imagen, id FROM Fotos WHERE Geoname=" + str(self.geoname))
         #convierto el cursor en array
         self.fotos = tuple(cursor)

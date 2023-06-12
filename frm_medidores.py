@@ -19,27 +19,26 @@ DialogBase, DialogType = uic.loadUiType(os.path.join(os.path.dirname(__file__),'
 
 class frmMedidores(DialogType, DialogBase):
         
-    def __init__(self, conn, id):
+    def __init__(self, tipo_usuario, conn, id):
         super().__init__()
         self.setupUi(self)
         self.setFixedSize(self.size())
+        self.tipo_usuario = tipo_usuario
         self.conn = conn
         self.id = id
         vint = QIntValidator()
         self.txtAnio.setValidator(vint)
-        self.inicio()
-        pass
 
-    def inicio(self):
+        if self.tipo_usuario==4:
+            self.cmdAceptar.setEnabled(False)
+
         self.cmbTipo.addItem("Monotarifa")
         self.cmbTipo.addItem("Multitarifa")
-        self.cmbTipo.addItem("Multitarifa")
-        self.cmbTipo.addItem("Bidireccional")
+        self.cmbTipo.addItem("Multitarifa Bidireccional")
         self.cmbTipo.addItem("Multitarifa Bidireccional con Telemedicion")
 
         cnn = self.conn
         cursor = cnn.cursor()
-        rs = []
         cursor.execute("SELECT Marca, Modelo, Anio, Fases, Relacion, nro_medidor, tipo FROM Medidores WHERE id_usuario=" + str(self.id))
         #convierto el cursor en array
         rs = tuple(cursor)
@@ -65,7 +64,7 @@ class frmMedidores(DialogType, DialogBase):
 
     def elementos(self):
         from .frm_bloques import frmBloques
-        self.dialogo = frmBloques(self.conn, self.id)
+        self.dialogo = frmBloques(self.tipo_usuario, self.conn, self.id)
         self.dialogo.show()
         pass
 
@@ -80,9 +79,12 @@ class frmMedidores(DialogType, DialogBase):
         str_set = str_set + ", Tipo='" + self.cmbTipo.currentText() + "'"
 
         #QMessageBox.information(None, 'EnerGis 5', str_set)
-        cursor.execute("UPDATE Medidores SET " + str_set + " WHERE id_usuario=" + str(self.id))
-        cnn.commit()
-        #QMessageBox.information(None, 'EnerGis 5', str_set)
+        try:
+            cursor.execute("UPDATE Medidores SET " + str_set + " WHERE id_usuario=" + str(self.id))
+            cnn.commit()
+        except:
+            cnn.rollback()
+            QMessageBox.information(None, 'EnerGis 5', 'No se pudo actualiar')
         self.close()
         pass
 

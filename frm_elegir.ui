@@ -78,12 +78,18 @@
          <property name="text">
           <string>Aceptar</string>
          </property>
+         <property name="shortcut">
+          <string>Return</string>
+         </property>
         </widget>
        </item>
        <item>
         <widget class="QPushButton" name="cmdSalir">
          <property name="text">
           <string>Salir</string>
+         </property>
+         <property name="shortcut">
+          <string>Esc</string>
          </property>
         </widget>
        </item>

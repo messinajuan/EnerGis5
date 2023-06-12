@@ -45,20 +45,19 @@ class frmLogin(DialogType, DialogBase):
         self.str_conexion_seguridad = str_conexion_seguridad
         self.nombre_usuario = nombre_usuario
 
-        self.cargarUsuario()
+        self.txtUsuario.setText(self.nombre_usuario)
+        self.txtPassword.setText('')
+        self.txtPassword.setFocus()
 
         self.buttonBox.accepted.connect(self.aceptar)
         self.buttonBox.rejected.connect(self.salir)
-
-    def cargarUsuario(self):
-        self.txtUsuario.setText(self.nombre_usuario)
-        self.txtPassword.setText('')
     
     def aceptar(self):
         self.tipo_usuario = 4
         try:
-            mensaje = 'No hay acceso a la base de datos'
+            mensaje = 'No hay acceso a la base de datos ' + self.str_conexion_seguridad
             self.conn_seguridad = pyodbc.connect(self.str_conexion_seguridad)
+            mensaje = 'Error buscando usuario'
             cursor = self.conn_seguridad.cursor()
             cursor.execute("SELECT id_usuario_sistema,us_nombre,us_contraseña,us_aplicacion,us_tipo_usuario FROM usuarios_sistema WHERE us_aplicacion='energis' AND us_nombre_usuario='" + str(self.txtUsuario.text()) + "'")
             rows = cursor.fetchall()
@@ -72,6 +71,9 @@ class frmLogin(DialogType, DialogBase):
                 if str(self.txtPassword.text()) == str(row[2]):
                     self.id_usuario_sistema = str(row[0])
                     self.tipo_usuario = str(row[4])
+
+                    #QMessageBox.information(None, 'EnerGis 5', str(self.tipo_usuario))
+
                     #me agrego a la lista de sesiones
                     cursor = self.conn_seguridad.cursor()
                     cursor.execute("UPDATE usuarios_sistema SET us_logged=1 WHERE us_aplicacion='energis' AND id_usuario_sistema=" + self.id_usuario_sistema)
@@ -82,23 +84,7 @@ class frmLogin(DialogType, DialogBase):
                     self.txtPassword.setText('')
 
             #guardo el usuario
-            f = open('C:\GIS\EnerGis5\conexion.ini','r')
-            ini = f.readlines()
-            f.close()
-            mensaje = 'Error agregando datos al login'
-            if len(ini)==1:
-                f = open('C:\GIS\EnerGis5\conexion.ini','a')
-                f.write('\n')
-                f.write(self.nombre_usuario)
-                f.close()
             self.nombre_usuario = self.txtUsuario.text()
-            ini[1] = self.nombre_usuario
-            mensaje = 'Error guardando datos de login'
-            f = open('C:\GIS\EnerGis5\conexion.ini','w')
-            for i in range (0, len(ini)):
-                f.writelines(ini[i])
-                #QMessageBox.information(None, 'EnerGis 5',str(ini[i]))
-            f.close()
         except:
             QMessageBox.information(None, 'EnerGis 5', mensaje)
 
