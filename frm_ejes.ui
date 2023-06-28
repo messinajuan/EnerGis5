@@ -14,7 +14,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Linea</string>
+   <string>Eje</string>
   </property>
   <widget class="QComboBox" name="cmbCiudad">
    <property name="geometry">

@@ -23,19 +23,15 @@ basepath = os.path.dirname(os.path.realpath(__file__))
 
 class herrZoom(QgsMapTool):
 
-    def __init__(self, iface, mapCanvas, herramienta):
+    def __init__(self, mapCanvas, herramienta):
         QgsMapTool.__init__(self, mapCanvas)
-        self.iface = iface
         self.mapCanvas = mapCanvas    
         self.herramienta = herramienta
-        
         self.ancho = 0
         self.alto = 0
         self.pcentro = QgsPointXY()
-        
         self.p1 = QgsPoint()
         self.p2 = QgsPoint()
-
         self.areas_temp = QgsVectorLayer()
        
         n = self.mapCanvas.layerCount()
@@ -44,11 +40,9 @@ class herrZoom(QgsMapTool):
         for lyr in layers:
             if lyr.name()[:5] == 'Nodos':
                 lyrCRS = lyr.crs().authid()
-                return
             if lyr.name() == 'Areas_Temp':
                 b_existe = True
                 self.areas_temp = lyr
-                return
 
         if b_existe == False:
             self.areas_temp = QgsVectorLayer("Polygon?crs=" + lyrCRS, "Areas_Temp", "memory")
@@ -83,7 +77,7 @@ class herrZoom(QgsMapTool):
         self.p2 = self.mapCanvas.getCoordinateTransform().toMapCoordinates(x, y)
 
         if self.herramienta == 'Pon':
-            e = self.iface.mapCanvas().extent()
+            e = self.mapCanvas.extent()
             self.ancho = abs(e.xMaximum() - e.xMinimum())
             self.alto = abs(e.yMaximum() - e.yMinimum())
             xcentro = e.xMinimum() + (e.xMaximum() - e.xMinimum()) / 2

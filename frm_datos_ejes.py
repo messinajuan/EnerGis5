@@ -47,7 +47,7 @@ class frmDatosEjes(DialogType, DialogBase):
 
         cnn = self.conn
         cursor = cnn.cursor()
-        cursor.execute("SELECT ciudad, descripcion FROM Calles WHERE ciudad=0")
+        cursor.execute("SELECT ciudad, descripcion FROM Calles WHERE ciudad='0'")
         #convierto el cursor en array
         self.calles = tuple(cursor)
         cursor.close()
@@ -82,7 +82,7 @@ class frmDatosEjes(DialogType, DialogBase):
         else:
             cnn = self.conn
             cursor = cnn.cursor()
-            cursor.execute("SELECT calle, descripcion FROM Calles WHERE ciudad=" + str(self.ciudad))
+            cursor.execute("SELECT calle, descripcion FROM Calles WHERE ciudad='" + str(self.ciudad) + "'")
             #convierto el cursor en array
             self.calles = tuple(cursor)
             cursor.close()
@@ -120,7 +120,7 @@ class frmDatosEjes(DialogType, DialogBase):
             cursor = cnn.cursor()
 
             if self.toolBox.currentIndex()==0:
-                str_set = "Ciudad=" + str(id_ciudad) + ", "
+                str_set = "Ciudad='" + str(id_ciudad) + "', "
                 str_set = str_set + "Calle=" + str(id_calle)
             if self.toolBox.currentIndex()==1:
                 str_set = "IzqDe=" + self.txtIzqde.text() + ", "

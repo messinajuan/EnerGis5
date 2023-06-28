@@ -19,7 +19,7 @@
   <widget class="QPushButton" name="cmdNuevaContingencia">
    <property name="geometry">
     <rect>
-     <x>810</x>
+     <x>520</x>
      <y>6</y>
      <width>70</width>
      <height>24</height>
@@ -32,7 +32,7 @@
   <widget class="QLabel" name="label_8">
    <property name="geometry">
     <rect>
-     <x>650</x>
+     <x>340</x>
      <y>10</y>
      <width>90</width>
      <height>16</height>
@@ -45,9 +45,9 @@
   <widget class="QLabel" name="lblContingencia">
    <property name="geometry">
     <rect>
-     <x>740</x>
+     <x>440</x>
      <y>10</y>
-     <width>60</width>
+     <width>70</width>
      <height>16</height>
     </rect>
    </property>
@@ -59,9 +59,9 @@
    <property name="geometry">
     <rect>
      <x>600</x>
-     <y>60</y>
+     <y>49</y>
      <width>280</width>
-     <height>360</height>
+     <height>371</height>
     </rect>
    </property>
    <property name="frameShape">
@@ -74,7 +74,7 @@
     <property name="geometry">
      <rect>
       <x>20</x>
-      <y>40</y>
+      <y>48</y>
       <width>110</width>
       <height>16</height>
      </rect>
@@ -87,7 +87,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>147</y>
+      <y>170</y>
       <width>260</width>
       <height>22</height>
      </rect>
@@ -97,7 +97,7 @@
     <property name="geometry">
      <rect>
       <x>220</x>
-      <y>67</y>
+      <y>77</y>
       <width>51</width>
       <height>22</height>
      </rect>
@@ -110,7 +110,7 @@
     <property name="geometry">
      <rect>
       <x>150</x>
-      <y>177</y>
+      <y>200</y>
       <width>120</width>
       <height>22</height>
      </rect>
@@ -120,7 +120,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>227</y>
+      <y>250</y>
       <width>120</width>
       <height>22</height>
      </rect>
@@ -130,7 +130,7 @@
     <property name="geometry">
      <rect>
       <x>130</x>
-      <y>37</y>
+      <y>45</y>
       <width>140</width>
       <height>22</height>
      </rect>
@@ -140,7 +140,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>257</y>
+      <y>280</y>
       <width>90</width>
       <height>16</height>
      </rect>
@@ -153,7 +153,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>177</y>
+      <y>200</y>
       <width>120</width>
       <height>22</height>
      </rect>
@@ -163,9 +163,9 @@
     <property name="geometry">
      <rect>
       <x>240</x>
-      <y>6</y>
+      <y>10</y>
       <width>30</width>
-      <height>24</height>
+      <height>31</height>
      </rect>
     </property>
     <property name="text">
@@ -176,7 +176,7 @@
     <property name="geometry">
      <rect>
       <x>150</x>
-      <y>227</y>
+      <y>250</y>
       <width>120</width>
       <height>22</height>
      </rect>
@@ -186,7 +186,7 @@
     <property name="geometry">
      <rect>
       <x>50</x>
-      <y>70</y>
+      <y>80</y>
       <width>80</width>
       <height>16</height>
      </rect>
@@ -199,7 +199,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>97</y>
+      <y>120</y>
       <width>260</width>
       <height>22</height>
      </rect>
@@ -209,7 +209,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>127</y>
+      <y>150</y>
       <width>260</width>
       <height>16</height>
      </rect>
@@ -222,7 +222,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>7</y>
+      <y>11</y>
       <width>140</width>
       <height>22</height>
      </rect>
@@ -232,7 +232,7 @@
     <property name="geometry">
      <rect>
       <x>130</x>
-      <y>67</y>
+      <y>77</y>
       <width>81</width>
       <height>22</height>
      </rect>
@@ -242,7 +242,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>77</y>
+      <y>100</y>
       <width>49</width>
       <height>16</height>
      </rect>
@@ -255,7 +255,7 @@
     <property name="geometry">
      <rect>
       <x>150</x>
-      <y>207</y>
+      <y>230</y>
       <width>120</width>
       <height>16</height>
      </rect>
@@ -268,7 +268,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>207</y>
+      <y>230</y>
       <width>120</width>
       <height>16</height>
      </rect>
@@ -281,7 +281,7 @@
     <property name="geometry">
      <rect>
       <x>156</x>
-      <y>7</y>
+      <y>11</y>
       <width>80</width>
       <height>22</height>
      </rect>
@@ -291,7 +291,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>277</y>
+      <y>300</y>
       <width>260</width>
       <height>71</height>
      </rect>
@@ -427,32 +427,6 @@
     <string>Grabar</string>
    </property>
   </widget>
-  <widget class="QLabel" name="label_10">
-   <property name="geometry">
-    <rect>
-     <x>600</x>
-     <y>40</y>
-     <width>49</width>
-     <height>16</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Evento</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="lblEvento">
-   <property name="geometry">
-    <rect>
-     <x>650</x>
-     <y>40</y>
-     <width>80</width>
-     <height>16</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>&lt;Automatico&gt;</string>
-   </property>
-  </widget>
   <widget class="QPushButton" name="cmdEditar">
    <property name="enabled">
     <bool>false</bool>
@@ -467,6 +441,94 @@
    </property>
    <property name="text">
     <string>Editar</string>
+   </property>
+  </widget>
+  <widget class="QFrame" name="frame_2">
+   <property name="geometry">
+    <rect>
+     <x>600</x>
+     <y>10</y>
+     <width>281</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="frameShape">
+    <enum>QFrame::StyledPanel</enum>
+   </property>
+   <property name="frameShadow">
+    <enum>QFrame::Raised</enum>
+   </property>
+   <widget class="QLabel" name="label_10">
+    <property name="geometry">
+     <rect>
+      <x>30</x>
+      <y>6</y>
+      <width>49</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Evento</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="lblEvento">
+    <property name="geometry">
+     <rect>
+      <x>90</x>
+      <y>6</y>
+      <width>80</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>&lt;Automatico&gt;</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="cmdNuevoEvento">
+    <property name="geometry">
+     <rect>
+      <x>180</x>
+      <y>3</y>
+      <width>70</width>
+      <height>24</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Nuevo</string>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QLineEdit" name="txtABuscar">
+   <property name="geometry">
+    <rect>
+     <x>170</x>
+     <y>10</y>
+     <width>80</width>
+     <height>22</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="cmdBuscar">
+   <property name="geometry">
+    <rect>
+     <x>260</x>
+     <y>10</y>
+     <width>30</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="icon">
+    <iconset>
+     <normaloff>icons/img_buscar.png</normaloff>icons/img_buscar.png</iconset>
+   </property>
+   <property name="shortcut">
+    <string>Return</string>
+   </property>
+   <property name="default">
+    <bool>true</bool>
    </property>
   </widget>
  </widget>

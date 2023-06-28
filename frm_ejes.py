@@ -52,7 +52,7 @@ class frmEjes(DialogType, DialogBase):
 
         cnn = self.conn
         cursor = cnn.cursor()
-        cursor.execute("SELECT ciudad, descripcion FROM Calles WHERE ciudad=0")
+        cursor.execute("SELECT ciudad, descripcion FROM Calles WHERE ciudad='0'")
         #convierto el cursor en array
         self.calles = tuple(cursor)
         cursor.close()
@@ -78,7 +78,7 @@ class frmEjes(DialogType, DialogBase):
                     ciudad = datos_eje[0][6]
 
             cursor = cnn.cursor()
-            cursor.execute("SELECT calle, descripcion FROM Calles WHERE ciudad=" + str(ciudad))
+            cursor.execute("SELECT calle, descripcion FROM Calles WHERE ciudad='" + str(ciudad) + "'")
             #convierto el cursor en array
             self.calles = tuple(cursor)
             cursor.close()
@@ -119,7 +119,7 @@ class frmEjes(DialogType, DialogBase):
         else:
             cnn = self.conn
             cursor = cnn.cursor()
-            cursor.execute("SELECT calle, descripcion FROM Calles WHERE ciudad=" + str(self.ciudad))
+            cursor.execute("SELECT calle, descripcion FROM Calles WHERE ciudad='" + str(self.ciudad) + "'")
             #convierto el cursor en array
             self.calles = tuple(cursor)
             cursor.close()
@@ -189,7 +189,7 @@ class frmEjes(DialogType, DialogBase):
 
                 cursor = cnn.cursor()
                 str_valores = str(id) + ", "
-                str_valores = str_valores + str(id_ciudad) + ", "
+                str_valores = str_valores + "'" + str(id_ciudad) + "', "
                 str_valores = str_valores + str(id_calle) + ", "
                 str_valores = str_valores + self.txtIzqde.text() + ", "
                 str_valores = str_valores + self.txtIzqa.text() + ", "
@@ -207,7 +207,7 @@ class frmEjes(DialogType, DialogBase):
                 cnn = self.conn
                 cnn.autocommit = False
                 cursor = cnn.cursor()
-                str_set = "Ciudad=" + str(id_ciudad) + ", "
+                str_set = "Ciudad='" + str(id_ciudad) + "', "
                 str_set = str_set + "Calle=" + str(id_calle) + ", "
                 str_set = str_set + "IzqDe=" + self.txtIzqde.text() + ", "
                 str_set = str_set + "IzqA=" + self.txtIzqa.text() + ", "

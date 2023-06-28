@@ -26,8 +26,8 @@ from .herr_area import herrArea
 from .herr_parcela import herrParcela
 from .herr_zoom import herrZoom
 from .herr_navegar_fuentes import herrNavegarFuentes
-from .herr_caida_tension import herrCaidaTension
 from .herr_navegar_extremos import herrNavegarExtremos
+from .herr_caida_tension import herrCaidaTension
 
 #esta es la direccion del proyecto
 basepath = os.path.dirname(os.path.realpath(__file__))
@@ -67,9 +67,8 @@ class herrSeleccion(QgsMapTool):
         ftrs_areas = []
         ftrs_parcelas = []
         capas = []
-        mapCanvas = self.iface.mapCanvas()
-        n = mapCanvas.layerCount()
-        layers = [mapCanvas.layer(i) for i in range(n)]
+        n = self.mapCanvas.layerCount()
+        layers = [self.mapCanvas.layer(i) for i in range(n)]
         str_nodos = '0'
         str_lineas = '0'
         str_postes = '0'
@@ -807,7 +806,7 @@ class herrSeleccion(QgsMapTool):
 
     def zoomIn(self):
         #QMessageBox.information(None, '', "zoomin")
-        tool = herrZoom(self.iface, self.iface.mapCanvas(), 'ZoomIn')
+        tool = herrZoom(self.iface.mapCanvas(), 'ZoomIn')
         self.iface.mapCanvas().setMapTool(tool)
         #Cambio el cursor
         punZoom = QtGui.QPixmap(os.path.join(basepath,"icons", 'cur_zoom_in.png'))
@@ -818,7 +817,7 @@ class herrSeleccion(QgsMapTool):
 
     def zoomOut(self):
         #QMessageBox.information(None, '', "zoomout")
-        tool = herrZoom(self.iface, self.iface.mapCanvas(), 'ZoomOut')
+        tool = herrZoom(self.iface.mapCanvas(), 'ZoomOut')
         self.iface.mapCanvas().setMapTool(tool)
         #Cambio el cursor
         punZoom = QtGui.QPixmap(os.path.join(basepath,"icons", 'cur_zoom_out.png'))
@@ -829,7 +828,7 @@ class herrSeleccion(QgsMapTool):
         
     def pan(self):
         #QMessageBox.information(None, 'h_nodo', "pan")
-        tool = herrZoom(self.iface, self.iface.mapCanvas(), 'Pan')
+        tool = herrZoom(self.iface.mapCanvas(), 'Pan')
         self.iface.mapCanvas().setMapTool(tool)
         #Cambio el cursor
         punZoom = QtGui.QPixmap(os.path.join(basepath,"icons", 'cur_pan.png'))
@@ -839,13 +838,13 @@ class herrSeleccion(QgsMapTool):
         pass
 
     def navegar_fuentes(self):
-        herrNavegarFuentes(self.iface, self.iface.mapCanvas(), self.conn, self.ftr.id())
+        herrNavegarFuentes(self.iface.mapCanvas(), self.conn, self.ftr.id())
         pass
 
     def caida_tension(self):
-        herrCaidaTension(self.iface, self.iface.mapCanvas(), self.conn, self.ftr.id())
+        herrCaidaTension(self.iface.mapCanvas(), self.conn, self.ftr.id())
         pass
 
     def navegar_extremos(self):
-        herrNavegarExtremos(self.iface, self.iface.mapCanvas(), self.conn, self.ftr.id())
+        herrNavegarExtremos(self.iface.mapCanvas(), self.conn, self.ftr.id())
         pass

@@ -71,10 +71,15 @@ class frmListados(DialogType, DialogBase):
 
         wbk = xlwt.Workbook()
         sheet = wbk.add_sheet("sheet", cell_overwrite_ok=True)
+
+        for currentColumn in range(self.tblListado.columnCount()):
+            teext = self.tblListado.horizontalHeaderItem(currentColumn).text()
+            sheet.write(0, currentColumn, teext)
+
         for currentColumn in range(self.tblListado.columnCount()):
             for currentRow in range(self.tblListado.rowCount()):
                 teext = str(self.tblListado.item(currentRow, currentColumn).text())
-                sheet.write(currentRow, currentColumn, teext)
+                sheet.write(currentRow + 1, currentColumn, teext)
         wbk.save(filename[0])
 
         QMessageBox.information(None, 'EnerGis 5', 'Exportado !')

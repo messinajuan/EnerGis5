@@ -19,7 +19,7 @@ import os
 #esta es la direccion del proyecto
 basepath = os.path.dirname(os.path.realpath(__file__))
 
-class herrRotar(QgsMapTool):
+class herrRotarEjes(QgsMapTool):
 
     def __init__(self, mapCanvas, conn):
         QgsMapTool.__init__(self, mapCanvas)
@@ -38,21 +38,9 @@ class herrRotar(QgsMapTool):
         n = mapCanvas.layerCount()
         layers = [mapCanvas.layer(i) for i in range(n)]
         for lyr in layers:
-            if lyr.name()[:5] == 'Nodos' and lyr.name() != 'Nodos_Temp':
+            if lyr.name() == 'Ejes de Calle':
                 for ftr in lyr.selectedFeatures():
-                    self.ftrs_nodos.append(ftr.id())
-            if lyr.name()[:6] == 'Lineas' and lyr.name() != 'Lineas_Temp':
-                for ftr in lyr.selectedFeatures():
-                    self.ftrs_lineas.append(ftr.id())
-            if lyr.name()[:6] == 'Postes':
-                for ftr in lyr.selectedFeatures():
-                    self.ftrs_postes.append(ftr.id())
-            if lyr.name() == 'Areas':
-                for ftr in lyr.selectedFeatures():
-                    self.ftrs_areas.append(ftr.id())
-            if lyr.name() == 'Parcelas':
-                for ftr in lyr.selectedFeatures():
-                    self.ftrs_parcelas.append(ftr.id())
+                    self.ftrs_ejes.append(ftr.id())
         pass
                    
     def canvasPressEvent(self, event):
@@ -63,7 +51,7 @@ class herrRotar(QgsMapTool):
         
         self.pc = QgsPoint(point.x(), point.y())
 
-        if len(self.ftrs_nodos) > 0 or len(self.ftrs_lineas) or len(self.ftrs_postes) or len(self.ftrs_areas) or len(self.ftrs_parcelas) > 0:
+        if len(self.ftrs_ejes) > 0:
             from .frm_rotar import frmRotar
             self.dialogo = frmRotar(self.mapCanvas, self.conn, self.ftrs_nodos, self.ftrs_lineas, self.ftrs_postes, self.ftrs_areas, self.ftrs_parcelas, self.ftrs_ejes, self.pc)
             self.dialogo.setWindowFlags(self.dialogo.windowFlags() & QtCore.Qt.CustomizeWindowHint)

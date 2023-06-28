@@ -2,10 +2,10 @@
 name = EnerGis
 email = messinajuan@yahoo.com.ar
 author = Juan Messina
-qgisMinimumVersion = 3.22
+qgisMinimumVersion = 3.22.16
 about = Base de Datos de EnerGis
 description = Gestion de Redes Electricas
-version = 5.0.12
+version = 5.0.14
 homepage = http://www.servimap.com.ar
 tracker = https://github.com/messinajuan/EnerGis5/issues
 repository = https://github.com/messinajuan/EnerGis5

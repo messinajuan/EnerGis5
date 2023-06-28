@@ -11,7 +11,7 @@
 #---------------------------------------------------------------------
 
 import os
-from PyQt5.QtWidgets import QTableWidgetItem, QTreeWidgetItem
+from PyQt5.QtWidgets import QTableWidgetItem
 from PyQt5.QtWidgets import QMessageBox
 #from PyQt5 import QtCore
 from PyQt5.QtCore import QDate
@@ -22,9 +22,10 @@ DialogBase, DialogType = uic.loadUiType(os.path.join(os.path.dirname(__file__),'
 
 class frmContingencias (DialogType, DialogBase):
 
-    def __init__(self, conn):
+    def __init__(self, conn, mapCanvas):
         super().__init__()
         self.setupUi(self)
+        self.mapCanvas=mapCanvas
 
         #self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
 
@@ -82,10 +83,12 @@ class frmContingencias (DialogType, DialogBase):
         self.lblContingencia.setText(str(self.ult_contingencia))
 
         self.cmbListar.activated.connect(self.listar)
+        self.cmdBuscar.clicked.connect(self.buscar)
         self.cmbTipoOperacion.activated.connect(self.cambiar_tipo_operacion)
         self.cmbCausa.activated.connect(self.cambiar_causa)
 
         self.cmdNuevaContingencia.clicked.connect(self.nueva_contingencia)
+        self.cmdNuevoEvento.clicked.connect(self.nuevo_evento)
         self.cmdImportar.clicked.connect(self.importar)
 
         self.cmdEditar.clicked.connect(self.editar)
@@ -105,6 +108,7 @@ class frmContingencias (DialogType, DialogBase):
     def listar(self):
         cnn = self.conn
         cursor = cnn.cursor()
+        self.txtABuscar.setText("")
         if self.cmbListar.currentText()=='Fecha':
             cursor = cnn.cursor()
             cursor.execute("SELECT id, fechahora AS Fecha, CASE WHEN Importo_Operaciones.tipo=-1 THEN 'Apertura' ELSE 'Cierre' END AS Operacion, Contingencia, Tipo_Elemento, nombre AS Elemento, Motivo AS Causa, Elemento_Falla, Zona_Falla, Tipo_Zona_Falla, Est_Tiempo, Responsable, Observaciones FROM Importo_Operaciones INNER JOIN Causas ON Importo_Operaciones.Causa = Causas.Id_Causa WHERE validada=1 AND incorporada=0 ORDER BY fechahora, Importo_Operaciones.tipo, tipo_elemento, nombre")
@@ -173,6 +177,83 @@ class frmContingencias (DialogType, DialogBase):
         if self.cmbListar.currentText()=='Elemento':
             cursor = cnn.cursor()
             cursor.execute("SELECT id, Tipo_Elemento, nombre AS Elemento, CASE WHEN Importo_Operaciones.tipo=-1 THEN 'Apertura' ELSE 'Cierre' END AS Operacion, Contingencia, fechahora AS Fecha, Motivo AS Causa, Elemento_Falla, Zona_Falla, Tipo_Zona_Falla, Est_Tiempo, Responsable, Observaciones FROM Importo_Operaciones INNER JOIN Causas ON Importo_Operaciones.Causa = Causas.Id_Causa WHERE validada=1 AND incorporada=0 ORDER BY tipo_elemento, nombre, Importo_Operaciones.tipo")
+            elementos = tuple(cursor)
+            encabezado = [column[0] for column in cursor.description]
+            cursor.close()
+            self.lleno_grilla(encabezado, elementos)
+        pass
+
+    def buscar(self):
+        cnn = self.conn
+        cursor = cnn.cursor()
+        if self.cmbListar.currentText()=='Fecha':
+            cursor = cnn.cursor()
+            cursor.execute("SELECT id, fechahora AS Fecha, CASE WHEN Importo_Operaciones.tipo=-1 THEN 'Apertura' ELSE 'Cierre' END AS Operacion, Contingencia, Tipo_Elemento, nombre AS Elemento, Motivo AS Causa, Elemento_Falla, Zona_Falla, Tipo_Zona_Falla, Est_Tiempo, Responsable, Observaciones FROM Importo_Operaciones INNER JOIN Causas ON Importo_Operaciones.Causa = Causas.Id_Causa WHERE validada=1 AND incorporada=0 AND nombre LIKE '%" + self.txtABuscar.text() + "%' ORDER BY fechahora, Importo_Operaciones.tipo, tipo_elemento, nombre")
+            elementos = tuple(cursor)
+            encabezado = [column[0] for column in cursor.description]
+            cursor.close()
+            self.lleno_grilla(encabezado, elementos)
+
+            #0:id
+            #1:fecha
+            #2:operacion
+            #3:contingencia
+            #4:Tipo_Elemento
+            #5:nombreElemento
+            #6:Causa
+            #7:Elemento_Falla
+            #8:Zona_Falla
+            #9:Tipo_Zona_Falla
+            #10:Est_Tiempo
+            #11:Responsable
+            #12:Observaciones
+
+            #self.treEventos.clear()
+            #if len(elementos) > 0:
+            #    self.treEventos.setColumnCount(len(elementos[0]))
+            #    self.treEventos.setHeaderLabels(encabezado)
+            #    #primera clave
+            #    fecha = '19000101'
+            #    contingencia = 0
+            #    nombre = ''
+            #    items = []
+            #    for i in range (0, len(elementos)):
+            #        #QMessageBox.information(None, 'EnerGis 5', str(elementos[i][1])[:10].replace('-',''))
+            #        dfecha = str(elementos[i][1])[:10].replace('-','')
+            #        if dfecha!=fecha:
+            #            fecha = str(elementos[i][1])[:10].replace('-','')
+            #            contingencia = 0
+            #            nombre = ''
+            #            item_fecha = QTreeWidgetItem(fecha)
+            #        else:
+            #            if elementos[i][3]!=contingencia:
+            #                contingencia=elementos[i][3]
+            #                nombre = ''
+            #                item_contingencia = QTreeWidgetItem([str(elementos[i][3])])
+            #                item_fecha.addChild(item_contingencia)
+            #            else:
+            #                if elementos[i][5]!=nombre:
+            #                    nombre=elementos[i][5]
+            #                    item_nombre = QTreeWidgetItem([str(elementos[i][5])])
+            #                    item_contingencia.addChild(item_nombre)
+            #                else:
+            #                    child = QTreeWidgetItem([elementos[i][2], elementos[i][4], elementos[i][6], elementos[i][7], elementos[i][8], elementos[i][10], elementos[i][11], elementos[i][12], elementos[i][0]])
+            #                    item_nombre.addChild(child)
+
+            #        items.append(item_fecha)
+            #    self.treEventos.insertTopLevelItems(0, items)
+
+        if self.cmbListar.currentText()=='Contingencia':
+            cursor = cnn.cursor()
+            cursor.execute("SELECT id, Contingencia, CASE WHEN Importo_Operaciones.tipo=-1 THEN 'Apertura' ELSE 'Cierre' END AS Operacion, fechahora AS Fecha, Tipo_Elemento, nombre AS Elemento, Motivo AS Causa, Elemento_Falla, Zona_Falla, Tipo_Zona_Falla, Est_Tiempo, Responsable, Observaciones FROM Importo_Operaciones INNER JOIN Causas ON Importo_Operaciones.Causa = Causas.Id_Causa WHERE validada=1 AND incorporada=0 AND nombre LIKE '%" + self.txtABuscar.text() + "%' ORDER BY contingencia, fechahora, Importo_Operaciones.tipo, tipo_elemento, nombre")
+            elementos = tuple(cursor)
+            encabezado = [column[0] for column in cursor.description]
+            cursor.close()
+            self.lleno_grilla(encabezado, elementos)
+
+        if self.cmbListar.currentText()=='Elemento':
+            cursor = cnn.cursor()
+            cursor.execute("SELECT id, Tipo_Elemento, nombre AS Elemento, CASE WHEN Importo_Operaciones.tipo=-1 THEN 'Apertura' ELSE 'Cierre' END AS Operacion, Contingencia, fechahora AS Fecha, Motivo AS Causa, Elemento_Falla, Zona_Falla, Tipo_Zona_Falla, Est_Tiempo, Responsable, Observaciones FROM Importo_Operaciones INNER JOIN Causas ON Importo_Operaciones.Causa = Causas.Id_Causa WHERE validada=1 AND incorporada=0 AND nombre LIKE '%" + self.txtABuscar.text() + "%' ORDER BY tipo_elemento, nombre, Importo_Operaciones.tipo")
             elementos = tuple(cursor)
             encabezado = [column[0] for column in cursor.description]
             cursor.close()
@@ -358,7 +439,10 @@ class frmContingencias (DialogType, DialogBase):
         rst = tuple(cursor)
         cursor.close()
         for rs in rst:
-            advertencias.add ("No se encuentra en el plano el aparato: " + str(rs[0]))
+            linea=[]
+            linea.append("Error")
+            linea.append("No se encuentra en el plano el aparato: " + rs[0])
+            advertencias.append (linea)
 
         #analizo que esten los usuarios
         cursor = cnn.cursor()
@@ -366,7 +450,10 @@ class frmContingencias (DialogType, DialogBase):
         rst = tuple(cursor)
         cursor.close()
         for rs in rst:
-            advertencias.add ("No se encuentra en el plano el usuario: " + rs[0])
+            linea=[]
+            linea.append("Error")
+            linea.append("No se encuentra en el plano el usuario: " + str(rs[0]))
+            advertencias.append (linea)
 
         #analizo si hay una apertura y cierre a la misma hora
         cursor = cnn.cursor()
@@ -374,7 +461,10 @@ class frmContingencias (DialogType, DialogBase):
         rst = tuple(cursor)
         cursor.close()
         for rs in rst:
-            advertencias.add ("El elemento " + rs[2] + ": " + rs[0] + " tiene cargados " + rs[3] + " eventos para un mismo instante: " + rs[1])
+            linea=[]
+            linea.append("Advertencia")
+            linea.append("El elemento " + rs[2] + ": " + rs[0] + " tiene cargados " + str(rs[3]) + " eventos para un mismo instante: " + str(rs[1]))
+            advertencias.append (linea)
 
         #analizo si hay una apertura y cierre a la misma hora
         cursor = cnn.cursor()
@@ -382,7 +472,10 @@ class frmContingencias (DialogType, DialogBase):
         rst = tuple(cursor)
         cursor.close()
         for rs in rst:
-            advertencias.add ("El usuario " + rs[0] + " tiene eventos faltantes")
+            linea=[]
+            linea.append("Advertencia")
+            linea.append("El usuario " + str(rs[0]) + " tiene eventos faltantes")
+            advertencias.append (linea)
 
         #analizo aperturas y cierres
         tmin = 10000
@@ -440,17 +533,29 @@ class frmContingencias (DialogType, DialogBase):
                 estado_inicial = rs[1]
                 if rs[3] == "Aparato Maniobra BT" or rs[3] == "Aparato Maniobra MT":
                     cursor = cnn.cursor()
-                    QMessageBox.information(None, 'EnerGis 5', str(rs[3]))
+                    #QMessageBox.information(None, 'EnerGis 5', str(rs[3]))
                     cursor.execute("SELECT elmt, estado FROM nodos WHERE Nodos.Tension>0 AND nombre='" + rs[0])
                     rst2 = tuple(cursor)
                     cursor.close()
                     if estado_inicial == 0 and rst2[0][0] == 2:
-                        advertencias.add ("Advertencia, la maniobra para el aparato NC comienza con un cierre")
+                        linea=[]
+                        linea.append("Advertencia")
+                        linea.append("La maniobra para el aparato NC " + rs[0] + ", comienza con un cierre. El " + str(rs[1]))
+                        advertencias.append (linea)
+
                     if estado_inicial == -1 and rst2[0][0] == 3:
-                        advertencias.add ("Advertencia, la maniobra para el aparato NA comienza con una apertura")
+                        linea=[]
+                        linea.append("Advertencia")
+                        linea.append("La maniobra para el aparato NA " + rs[0] + ", comienza con una apertura. El " + str(rs[1]))
+                        advertencias.append (linea)
+
+
                 if rs[3] == "Transformador":
                     if estado_inicial == 0:
-                        advertencias.add ("Advertencia, la maniobra para el Ct comienza con un cierre")
+                        linea=[]
+                        linea.append("Advertencia")
+                        linea.append("La maniobra para el Ct " + rs[0] + ", comienza con un cierre. El " + str(rs[1]))
+                        advertencias.append (linea)
             nombre = rs[0]
             estado = rs[1]
             if estado == estado_inicial:
@@ -458,7 +563,10 @@ class frmContingencias (DialogType, DialogBase):
             else:
                 tfin = rs[2]
                 if tini == tfin:
-                    advertencias.add ("El cierre y la apertura se suceden al mismo instante")
+                    linea=[]
+                    linea.append("Error")
+                    linea.append("Elemento: " + nombre + ". El cierre y la apertura se suceden al mismo instante: " + str(tini))
+                    advertencias.append (linea)
                 else:
                     dt = (tfin - tini).seconds / 3600
                     #QMessageBox.information(None, 'EnerGis 5', str(dt))
@@ -470,11 +578,14 @@ class frmContingencias (DialogType, DialogBase):
                         amax = rs[3] + " " + rs[0]
 
         cursor = cnn.cursor()
-        cursor.execute("SELECT Importo_Operaciones.nombre FROM (Importo_Operaciones INNER JOIN (SELECT nombre, MIN(fechahora) AS fecha FROM Importo_Operaciones AS Importo_Operaciones_1 GROUP BY nombre) AS A ON (Importo_Operaciones.fechahora = A.fecha) AND (Importo_Operaciones.nombre = A.nombre)) INNER JOIN Nodos ON A.nombre = Nodos.Nombre WHERE incorporada=0 AND tipo_elemento<>'Usuario' AND ((Importo_Operaciones.tipo = - 1 AND Nodos.Elmt = 3) OR (Importo_Operaciones.tipo = 0 AND Nodos.Elmt = 2))")
+        cursor.execute("SELECT Importo_Operaciones.nombre, Importo_Operaciones.fechahora FROM (Importo_Operaciones INNER JOIN (SELECT nombre, MIN(fechahora) AS fecha FROM Importo_Operaciones AS Importo_Operaciones_1 GROUP BY nombre) AS A ON (Importo_Operaciones.fechahora = A.fecha) AND (Importo_Operaciones.nombre = A.nombre)) INNER JOIN Nodos ON A.nombre = Nodos.Nombre WHERE incorporada=0 AND tipo_elemento<>'Usuario' AND ((Importo_Operaciones.tipo = - 1 AND Nodos.Elmt = 3) OR (Importo_Operaciones.tipo = 0 AND Nodos.Elmt = 2))")
         rst = tuple(cursor)
         cursor.close()
         for rs in rst:
-            advertencias.add ("Advertencia, no coincide el estado normal del seccionador " + rs[0] + " con la maniobra")
+            linea=[]
+            linea.append("Advertencia")
+            linea.append("No coincide el estado normal del seccionador " + rs[0] + " con la maniobra. El " + str(rs[1]))
+            advertencias.append (linea)
 
         #analizo entrada y salida de usuarios
         cursor = cnn.cursor()
@@ -485,9 +596,9 @@ class frmContingencias (DialogType, DialogBase):
             if rs[0] == nombre: #es el mismo usuario
                 if estado == rs[1]: #se repite
                     if estado == -1:
-                        QMessageBox.information(None, 'EnerGis 5', "El usuario: " + rs[0] + " tiene 2 salidas seguidas - " + str(rs[3]))
+                        QMessageBox.information(None, 'EnerGis 5', "El usuario: " + rs[0] + " tiene 2 salidas seguidas - " + str(rs[2]))
                     else:
-                        QMessageBox.information(None, 'EnerGis 5', "El usuario: " + rs[0] + " tiene 2 entradas seguidas - " + str(rs[3]))
+                        QMessageBox.information(None, 'EnerGis 5', "El usuario: " + rs[0] + " tiene 2 entradas seguidas - " + str(rs[2]))
 
                         cursor = cnn.cursor()
                         QMessageBox.information(None, 'EnerGis 5', str(rs[3]))
@@ -527,7 +638,10 @@ class frmContingencias (DialogType, DialogBase):
                 #me fijo si empieza con apertura o cierre
                 estado_inicial = rs[1]
                 if estado_inicial == 0:
-                    advertencias.add("Para el usuario: " + rs[0] + " la maniobra comienza con un cierre")
+                    linea=[]
+                    linea.append("Advertencia")
+                    linea.append("Para el usuario: " + str(rs[0]) + " la maniobra comienza con un cierre. El " + str(rs[2]))
+                    advertencias.append (linea)
 
             nombre = rs[0]
             estado = rs[1]
@@ -537,7 +651,6 @@ class frmContingencias (DialogType, DialogBase):
                 tfin = rs[2]
 
                 dt = (tfin - tini).seconds / 3600
-                #QMessageBox.information(None, 'EnerGis 5', str(dt))
                 if dt < tmin:
                     tmin = dt
                     amin = rs[3] + " " + rs[0]
@@ -545,8 +658,18 @@ class frmContingencias (DialogType, DialogBase):
                     tmax = dt
                     amax = rs[3] + " " + rs[0]
 
-        if len(advertencias)> 0:
-            QMessageBox.information(None, 'EnerGis 5', str(advertencias))
+        if len(advertencias[0])> 0:
+            #QMessageBox.information(None, 'EnerGis 5', str(advertencias))
+
+            encabezado = ["Tipo", "Descripción"]
+
+            from .frm_lista import frmLista
+            self.dialogo = frmLista(self.mapCanvas, encabezado, advertencias)
+            self.dialogo.setWindowTitle('Resultados Verificación')
+            self.dialogo.resize(900,self.dialogo.height())
+            self.dialogo.show()
+
+            return
 
         QMessageBox.information(None, 'EnerGis 5', "El mayor tiempo de interrupción es de " + str(format(tmax, ".2f")) + " hs. (" + amax + ") y el mínimo es de " + str(format(tmin, ".2f")) + " hs. (" + amin + ")")
         QMessageBox.information(None, 'EnerGis 5', "Contingencias cargadas correctamente !")
@@ -632,6 +755,15 @@ class frmContingencias (DialogType, DialogBase):
         self.cmdCancelar.setEnabled(True)
         self.tblLista.setEnabled(False)
 
+    def nuevo_evento(self):
+        self.lblEvento.setText("<Automatico>")
+        self.frame.setEnabled(True)
+        self.cmdEditar.setEnabled(False)
+        self.cmdBorrar.setEnabled(False)
+        self.cmdGrabar.setEnabled(True)
+        self.cmdCancelar.setEnabled(True)
+        self.tblLista.setEnabled(False)
+
     def editar(self):
         self.frame.setEnabled(True)
         self.cmdEditar.setEnabled(False)
@@ -643,10 +775,20 @@ class frmContingencias (DialogType, DialogBase):
             self.tblLista.selectRow(self.seleccionado)
 
     def borrar(self):
+        cnn = self.conn
         reply = QMessageBox.question(None, 'EnerGis 5', 'Desea borrar el evento ?', QMessageBox.Yes, QMessageBox.No)
         if reply == QMessageBox.No:
                 return
-        QMessageBox.information(None, 'EnerGis 5', str(self.lblEvento.text()))
+
+        cursor = cnn.cursor()
+        try:
+            cursor.execute("DELETE FROM Importo_Operaciones WHERE id=" + str(self.lblEvento.text()))
+            cnn.commit()
+            QMessageBox.information(None, 'EnerGis 5', 'Borrado !')
+            self.listar()
+        except:
+            cnn.rollback()
+            QMessageBox.information(None, 'EnerGis 5', "No se pudo Borrar !")
         pass
 
     def cancelar(self):
@@ -657,6 +799,7 @@ class frmContingencias (DialogType, DialogBase):
         self.tblLista.setEnabled(True)
         if self.seleccionado!=-1:
             self.tblLista.selectRow(self.seleccionado)
+        self.lblEvento.setText("<Automatico>")
         pass
 
     def grabar(self):
@@ -698,7 +841,10 @@ class frmContingencias (DialogType, DialogBase):
         if self.cmbTipoInstalacion.currentText() == "":
             QMessageBox.information(None, 'EnerGis 5', "Debe escoger una instalación !")
             return
-        elemento_falla = self.cmbTipoInstalacion.currentText()
+
+        for i in range (0, len(self.tipo_instalacion)):
+            if self.cmbTipoInstalacion.currentText()==self.tipo_instalacion[i][1]:
+                elemento_falla=str(self.tipo_instalacion[i][0])[:3]
 
         if self.cmbTipoOperacion.currentText()=="Apertura":
             tipo_operacion = -1
@@ -706,19 +852,31 @@ class frmContingencias (DialogType, DialogBase):
             tipo_operacion = 0
 
         fechahora = str(self.datFecha.date().toPyDate()).replace('-','') + ' ' + str(self.timHora.time().toPyTime())
-        QMessageBox.information(None, 'EnerGis 5', str(fechahora))
 
         for i in range (0, len(self.causas)):
             if self.cmbCausa.currentText()==self.causas[i][2]:
                 causa = self.causas[i][0]
 
-        #cursor = cnn.cursor()
-        #cursor.execute("INSERT INTO Importo_Operaciones (nombre,tipo,fechahora,causa,contingencia,responsable,est_tiempo,observaciones,elemento_falla,tipo_elemento,zona_falla,tipo_zona_falla,incorporada,usuario,validada) VALUES ('" + self.txtNombre.text() + "'," + str(tipo_operacion) + ",'" + fechahora + "'," + causa + "," + self.id_contingencia + ",'" + self.txtResponsable.text() + "','" + self.cmbTiempo.currentText() + "','" + self.txtObservaciones.toPlainText() + "'," + elemento_falla + ",'" + tipo_elemento + "','" + zona_falla + "','" + tipo_zona_falla + "',0," + "99" + ",0)") #Codigo_Usuario
-        #cursor.execute("UPDATE Importo_Operaciones SET nombre='" + self.txtNombre.text() + "',tipo=" + str(tipo_operacion) + ",fechahora='" + fechahora + "',causa=" + causa + ",contingencia=" + self.id_contingencia + ",responsable='" + self.txtResponsable.text() + "',est_tiempo='" + self.cmbTiempo.currentText() + "',observaciones='" + self.txtObservaciones.toPlainText() + "',elemento_falla=" + elemento_falla + ", tipo_elemento='" + tipo_elemento + "', zona_falla='" + zona_falla + "' ,tipo_zona_falla = '" + tipo_zona_falla + "' WHERE id=" + self.id)
-        #cnn.commit()
-        QMessageBox.information(None, 'EnerGis 5', 'Grabado !')
+        cursor = cnn.cursor()
+        if self.lblEvento.text()=="<Automatico>":
+            try:
+                cursor.execute("INSERT INTO Importo_Operaciones (nombre,tipo,fechahora,causa,contingencia,responsable,est_tiempo,observaciones,elemento_falla,tipo_elemento,zona_falla,tipo_zona_falla,incorporada,usuario,validada) VALUES ('" + self.txtNombre.text() + "'," + str(tipo_operacion) + ",'" + fechahora + "'," +  str(causa) + "," + str(self.id_contingencia) + ",'" + self.txtResponsable.text() + "','" + self.cmbTiempo.currentText() + "','" + self.txtObservaciones.toPlainText() + "'," + str(elemento_falla) + ",'" + tipo_elemento + "','" + zona_falla + "','" + tipo_zona_falla + "',0," + "99" + ",0)")
+                cnn.commit()
+                QMessageBox.information(None, 'EnerGis 5', 'Grabado !')
+            except:
+                cnn.rollback()
+                QMessageBox.information(None, 'EnerGis 5', "No se pudo grabar en la Base de Datos !")
+        else:
+            try:
+                cursor.execute("UPDATE Importo_Operaciones SET nombre='" + self.txtNombre.text() + "',tipo=" + str(tipo_operacion) + ",fechahora='" + fechahora + "',causa=" +  str(causa) + ",contingencia=" + str(self.id_contingencia) + ",responsable='" + self.txtResponsable.text() + "',est_tiempo='" + self.cmbTiempo.currentText() + "',observaciones='" + self.txtObservaciones.toPlainText() + "',elemento_falla=" + str(elemento_falla) + ",tipo_elemento='" + tipo_elemento + "',zona_falla='" + zona_falla + "',tipo_zona_falla = '" + tipo_zona_falla + "' WHERE id=" + self.lblEvento.text())
+                cnn.commit()
+                QMessageBox.information(None, 'EnerGis 5', 'Grabado !')
+            except:
+                cnn.rollback()
+                QMessageBox.information(None, 'EnerGis 5', "No se pudo grabar en la Base de Datos !")
+
         self.cancelar()
-        self.listar
+        self.listar()
         if self.seleccionado!=-1:
             self.tblLista.selectRow(self.seleccionado)
         pass
@@ -734,6 +892,7 @@ class frmContingencias (DialogType, DialogBase):
                 self.tblLista.setItem(i,j,item)
         self.tblLista.setHorizontalHeaderLabels(encabezado)
         self.tblLista.setColumnWidth(0, 0)
+        self.tblLista.setColumnWidth(1, 120)
         pass
 
     def salir(self):

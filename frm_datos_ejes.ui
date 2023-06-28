@@ -14,7 +14,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Linea</string>
+   <string>Datos de los Ejes</string>
   </property>
   <widget class="QPushButton" name="cmdSalir">
    <property name="geometry">

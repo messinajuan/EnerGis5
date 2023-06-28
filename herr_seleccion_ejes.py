@@ -19,7 +19,7 @@ from qgis.core import QgsProject
 
 import os
 
-from .herr_eje import herrEje
+#from .herr_eje import herrEje
 from .herr_zoom import herrZoom
 
 #esta es la direccion del proyecto
@@ -49,9 +49,8 @@ class herrSeleccionEjes(QgsMapTool):
 
     def h_borrar_ejes(self): #copiado textualmente de energis5.py
         ftrs_ejes = []
-        mapCanvas = self.iface.mapCanvas()
-        n = mapCanvas.layerCount()
-        layers = [mapCanvas.layer(i) for i in range(n)]
+        n = self.mapCanvas.layerCount()
+        layers = [self.mapCanvas.layer(i) for i in range(n)]
         str_ejes = '0'
         for lyr in layers:
             if lyr.name() == 'Ejes de Calle':

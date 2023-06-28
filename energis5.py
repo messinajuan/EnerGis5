@@ -12,9 +12,10 @@
 
 from PyQt5 import QtWidgets, QtGui
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QMessageBox, QComboBox, QAction, QInputDialog
+from PyQt5.QtWidgets import QMessageBox, QComboBox, QAction, QInputDialog, QDockWidget, QToolBar
 from qgis.core import QgsMapLayerType, QgsVectorFileWriter
 from qgis.core import QgsProject, QgsSimpleMarkerSymbolLayerBase
+from PyQt5.QtCore import Qt
 
 from .mod_navegacion import navegar_compilar_red, buscar_loops
 from .herr_seleccion import herrSeleccion
@@ -71,7 +72,7 @@ class EnerGis5(object):
     def initGui(self):
         #llamado cuando se carga el complemento
         #La versión cambiará cuando cambie la db
-        self.version = '5.0.12'
+        self.version = '5.0.14'
         pass
 
     def run(self):
@@ -106,10 +107,23 @@ class EnerGis5(object):
             self.actions = []
             self.menu = ('EnerGIS')
             self.toolbar_h = self.iface.addToolBar('EnerGis Dibujo')
-            self.toolbar_v = self.iface.addToolBar('EnerGis Busqueda')
-            self.toolbar_p = self.iface.addToolBar('EnerGis Proyectos')
             self.toolbar_e = self.iface.addToolBar('EnerGis Ejes')
-            #self.toolbar_v.area = Qt.LeftToolBarArea
+
+            #self.dock_widget = QDockWidget('EnerGis', self.iface.mainWindow())
+            #self.dock_widget.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
+            #self.iface.addDockWidget(Qt.LeftDockWidgetArea, self.dock_widget)
+
+            #self.dock_widget.setFeatures(QDockWidget.DockWidgetMovable | QDockWidget.DockWidgetFloatable | QDockWidget.DockWidgetVerticalTitleBar)
+            #self.toolbar_v.setObjectName('EnerGis Busqueda')
+            #self.dock_widget.setWidget(self.toolbar_v)
+
+            main_window = self.iface.mainWindow()
+            self.toolbar_v = QToolBar('EnerGis Busqueda')
+            self.toolbar_v.setOrientation(Qt.Vertical)
+            main_window.addToolBar(Qt.LeftToolBarArea, self.toolbar_v)
+
+            self.toolbar_p = QToolBar('EnerGis Proyectos')
+            main_window.addToolBar(Qt.BottomToolBarArea, self.toolbar_p)
 
             self.id_usuario_sistema = 0
             self.tipo_usuario = 4
@@ -248,8 +262,8 @@ class EnerGis5(object):
                 self.cmbTension.addItem(str(self.tensiones[t][0]))
 
             #Esto puede servir para ver si están cargadas todas las capas electricas
-            #n = self.mapCanvas.layerCount()
-            #layers = [self.mapCanvas.layer(i) for i in range(n)]
+            #n = self.iface.mapCanvas().layerCount()
+            #layers = [self.mapCanvas().layer(i) for i in range(n)]
             #for lyr in layers:
             #    if lyr.name()[:5] == 'Nodos':
             #        str_tension = lyr.name() [6 - len(lyr.name()):]
@@ -257,8 +271,8 @@ class EnerGis5(object):
             #            if str(t[0])==str_tension:
             #                self.cmbTension.addItem(str_tension)
 
-            n = self.mapCanvas.layerCount()
-            layers = [self.mapCanvas.layer(i) for i in range(n)]
+            n = self.iface.mapCanvas().layerCount()
+            layers = [self.iface.mapCanvas().layer(i) for i in range(n)]
             for lyr in layers:
                 if lyr.name() == 'Nodos Proyectos' or lyr.name() == 'Lineas Proyectos' or lyr.name() == 'Postes Proyectos':
                     lyr.setSubsetString('"Alimentador" = ' + "'@@'")
@@ -342,9 +356,15 @@ class EnerGis5(object):
         else:
             try:
                 self.toolbar_h.deleteLater()
-                self.toolbar_v.deleteLater()
-                self.toolbar_p.deleteLater()
                 self.toolbar_e.deleteLater()
+
+                main_window = self.iface.mainWindow()
+                main_window.removeToolBar(self.toolbar_p)
+                main_window.removeToolBar(self.toolbar_v)
+
+                self.toolbar_p.deleteLater()
+                self.toolbar_v.deleteLater()
+
             except:
                 pass
         self.h_seleccion()
@@ -402,7 +422,7 @@ class EnerGis5(object):
 
     def carga_contingencias(self):
         from .frm_contingencias import frmContingencias
-        self.dialogo = frmContingencias(self.conn)
+        self.dialogo = frmContingencias(self.conn, self.iface.mapCanvas())
         self.dialogo.show()
         pass
 
@@ -552,15 +572,27 @@ class EnerGis5(object):
 
         for c in configuracion:
             if c[0]=='Version':
-                v=c[1]
+                version_instalada = c[1]
 
-        if v==self.version: #deberia comparar el 5, el 0 y el 11 del 5.0.11 y hacer cambios direfenciales.
-                            #cada uno de estos ifs debería ejecutarse en estos casos, o sea podrian ejecutarse mas de uno
+        versiones_nuevas = self.version.split('.')
+        version_nueva1 = versiones_nuevas[0]
+        version_nueva2 = versiones_nuevas[1]
+        version_nueva3 = versiones_nuevas[2]
+
+        versiones_instaladas = version_instalada.split('.')
+        version_instalada1 = versiones_instaladas[0]
+        version_instalada2 = versiones_instaladas[1]
+        version_instalada3 = versiones_instaladas[2]
+
+        if (version_nueva1<=version_instalada1) or (version_nueva1==version_instalada1 and version_nueva2<=version_instalada2) or (version_nueva2==version_instalada2 and version_nueva3<=version_instalada3):
             return
 
         cnn = self.conn
         cursor = cnn.cursor()
 
+        #-------------------------------------------------------------------------------------------------
+        #------------------------------------------ actualizar -------------------------------------------
+        #-------------------------------------------------------------------------------------------------
         try:
             cursor.execute("CREATE TABLE [Fotos]([Id] [int] IDENTITY(1,1) NOT NULL,[Geoname] [int] NULL,[Nombre] [varchar](50) NULL,[Imagen] [image] NULL,CONSTRAINT [PK_Fotos] PRIMARY KEY CLUSTERED ([Id] ASC) ON [PRIMARY]) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]")
             cnn.commit()
@@ -860,6 +892,7 @@ class EnerGis5(object):
             QMessageBox.information(None, 'EnerGis 5', "Se actualizó la DB a la versión " + self.version)
         except:
             cnn.rollback()
+        #-------------------------------------------------------------------------------------------------
 
     def crear_red(self):
         cnn = self.conn
@@ -888,9 +921,8 @@ class EnerGis5(object):
         if os.path.isdir('c:/gis/energis5/QField/')==False:
             os.mkdir('c:/gis/energis5/QField/')
 
-        mapCanvas = self.iface.mapCanvas()
-        n = mapCanvas.layerCount()
-        layers = [mapCanvas.layer(i) for i in range(n)]
+        n = self.iface.mapCanvas().layerCount()
+        layers = [self.iface.mapCanvas().layer(i) for i in range(n)]
         for lyr in layers:
             if lyr.name()[:5] == 'Nodos' and lyr.name() != 'Nodos_Temp':
                 QgsVectorFileWriter.writeAsVectorFormat(lyr, "c:/gis/energis5/QField/" + lyr.name() + ".shp", "", lyr.crs(), "ESRI Shapefile")
@@ -904,9 +936,8 @@ class EnerGis5(object):
         if os.path.isdir('c:/gis/energis5/MapInfo/')==False:
             os.mkdir('c:/gis/energis5/MapInfo/')
 
-        mapCanvas = self.iface.mapCanvas()
-        n = mapCanvas.layerCount()
-        layers = [mapCanvas.layer(i) for i in range(n)]
+        n = self.iface.mapCanvas().layerCount()
+        layers = [self.iface.mapCanvas().layer(i) for i in range(n)]
         for lyr in layers:
             if lyr.name()[:5] == 'Nodos' and lyr.name() != 'Nodos_Temp':
                 #QgsVectorFileWriter.writeAsVectorFormat(lyr, "c:/gis/energis5/MapInfo/" + self.nombre_modelo.lower() + lyr.name().replace('Nodos ','_no_') + ".tab", "", lyr.crs(), "MapInfo File", symbologyExport=QgsVectorFileWriter.FeatureSymbology)
@@ -935,9 +966,8 @@ class EnerGis5(object):
         cursor.execute("SELECT aux, geoname FROM mNodos WHERE estado=1")
         fuentes = cursor.fetchall()
         cursor.close()
-        mapCanvas = self.iface.mapCanvas()
-        n = mapCanvas.layerCount()
-        layers = [mapCanvas.layer(i) for i in range(n)]
+        n = self.iface.mapCanvas().layerCount()
+        layers = [self.iface.mapCanvas().layer(i) for i in range(n)]
         for lyr in layers:
             if lyr.type() == QgsMapLayerType.VectorLayer: #si es una capa vectorial
                 lyr.removeSelection()
@@ -1025,7 +1055,7 @@ class EnerGis5(object):
             cursor.close()
 
             from .frm_lista import frmLista
-            self.dialogo = frmLista(self.mapCanvas, encabezado, elementos)
+            self.dialogo = frmLista(self.iface.mapCanvas(), encabezado, elementos)
             self.dialogo.setWindowTitle('Resultados Verificación')
             self.dialogo.show()
 
@@ -1050,13 +1080,13 @@ class EnerGis5(object):
 
     def h_elementos_seleccionados(self):
         from .frm_seleccion import frmSeleccion
-        self.dialogo = frmSeleccion(self.mapCanvas)
+        self.dialogo = frmSeleccion(self.iface.mapCanvas())
         self.dialogo.show()
 
     def h_navegar_fuentes(self):
         ftrs = []
-        n = self.mapCanvas.layerCount()
-        layers = [self.mapCanvas.layer(i) for i in range(n)]
+        n = self.iface.mapCanvas().layerCount()
+        layers = [self.iface.mapCanvas().layer(i) for i in range(n)]
         for lyr in layers:
             if lyr.name()[:5] == 'Nodos':
                 #QMessageBox.information(None, 'EnerGis 5', str(lyr.name()))
@@ -1067,13 +1097,13 @@ class EnerGis5(object):
             QMessageBox.information(None, 'EnerGis 5', 'Debe seleccionar un nodo')
             return
         id = ftrs[0].id()
-        herrNavegarFuentes(self.iface, self.iface.mapCanvas(), self.conn, id)
+        herrNavegarFuentes(self.iface.mapCanvas(), self.conn, id)
         pass
 
     def h_navegar_extremos(self):
         ftrs = []
-        n = self.mapCanvas.layerCount()
-        layers = [self.mapCanvas.layer(i) for i in range(n)]
+        n = self.iface.mapCanvas().layerCount()
+        layers = [self.iface.mapCanvas().layer(i) for i in range(n)]
         for lyr in layers:
             if lyr.name()[:5] == 'Nodos':
                 #QMessageBox.information(None, 'EnerGis 5', str(lyr.name()))
@@ -1084,7 +1114,7 @@ class EnerGis5(object):
             QMessageBox.information(None, 'EnerGis 5', 'Debe seleccionar un nodo')
             return
         id = ftrs[0].id()
-        herrNavegarExtremos(self.iface, self.iface.mapCanvas(), self.conn, id)
+        herrNavegarExtremos(self.iface.mapCanvas(), self.conn, id)
         pass
 
     def h_desconectados(self):
@@ -1105,9 +1135,8 @@ class EnerGis5(object):
         cursor.execute("SELECT aux, geoname FROM mNodos WHERE estado=1")
         fuentes = cursor.fetchall()
         cursor.close()
-        mapCanvas = self.iface.mapCanvas()
-        n = mapCanvas.layerCount()
-        layers = [mapCanvas.layer(i) for i in range(n)]
+        n = self.iface.mapCanvas().layerCount()
+        layers = [self.iface.mapCanvas().layer(i) for i in range(n)]
         for lyr in layers:
             if lyr.type() == QgsMapLayerType.VectorLayer: #si es una capa vectorial
                 lyr.removeSelection()
@@ -1165,9 +1194,8 @@ class EnerGis5(object):
         self.mnodos = tuple(cursor)
         cursor.close()
 
-        mapCanvas = self.iface.mapCanvas()
-        n = mapCanvas.layerCount()
-        layers = [mapCanvas.layer(i) for i in range(n)]
+        n = self.iface.mapCanvas().layerCount()
+        layers = [self.iface.mapCanvas().layer(i) for i in range(n)]
         for lyr in layers:
             if lyr.type() == QgsMapLayerType.VectorLayer: #si es una capa vectorial
                 lyr.removeSelection()
@@ -1206,9 +1234,8 @@ class EnerGis5(object):
         #convierto el cursor en array
         self.mnodos = tuple(cursor)
         cursor.close()
-        mapCanvas = self.iface.mapCanvas()
-        n = mapCanvas.layerCount()
-        layers = [mapCanvas.layer(i) for i in range(n)]
+        n = self.iface.mapCanvas().layerCount()
+        layers = [self.iface.mapCanvas().layer(i) for i in range(n)]
         for lyr in layers:
             if lyr.type() == QgsMapLayerType.VectorLayer: #si es una capa vectorial
                 lyr.removeSelection()
@@ -1244,22 +1271,19 @@ class EnerGis5(object):
 
     def h_buscar(self):
         from .frm_buscar import frmBuscar
-        mapCanvas = self.iface.mapCanvas()
-        self.dialogo = frmBuscar(mapCanvas, self.conn)
+        self.dialogo = frmBuscar(self.iface.mapCanvas(), self.conn)
         self.dialogo.show()
         pass
 
     def h_buscar_direccion(self):
         from .frm_buscar_direccion import frmBuscarDireccion
-        mapCanvas = self.iface.mapCanvas()
-        self.dialogo = frmBuscarDireccion(mapCanvas, self.conn)
+        self.dialogo = frmBuscarDireccion(self.iface.mapCanvas(), self.conn)
         self.dialogo.show()
         pass
 
     def h_usuarios_nuevos(self):
         from .frm_usuarios_nuevos import frmUsuariosNuevos
-        mapCanvas = self.iface.mapCanvas()
-        self.dialogo = frmUsuariosNuevos(mapCanvas, self.conn)
+        self.dialogo = frmUsuariosNuevos(self.iface.mapCanvas(), self.conn)
         self.dialogo.show()
         pass
 
@@ -1274,8 +1298,8 @@ class EnerGis5(object):
                 b_estado = action.isChecked()
 
         b_existe = False
-        n = self.mapCanvas.layerCount()
-        layers = [self.mapCanvas.layer(i) for i in range(n)]
+        n = self.iface.mapCanvas().layerCount()
+        layers = [self.iface.mapCanvas().layer(i) for i in range(n)]
         for lyr in layers:
             if lyr.name()[:5] == 'Nodos':
                 lyrCRS = lyr.crs().authid()
@@ -1319,8 +1343,7 @@ class EnerGis5(object):
 
     def h_datos_seleccion(self):
         from .frm_datos_seleccion import frmDatosSeleccion
-        mapCanvas = self.iface.mapCanvas()
-        self.dialogo = frmDatosSeleccion(self.tipo_usuario, mapCanvas, self.conn)
+        self.dialogo = frmDatosSeleccion(self.tipo_usuario, self.iface.mapCanvas(), self.conn)
         self.dialogo.show()
         pass
 
@@ -1331,7 +1354,7 @@ class EnerGis5(object):
         seleccion_px = QtGui.QPixmap(os.path.join(basepath,"icons", 'cur_seleccion.png'))
         seleccion_px.setMask(seleccion_px.mask())
         seleccion_cursor = QtGui.QCursor(seleccion_px)
-        self.mapCanvas.setCursor(seleccion_cursor)
+        self.iface.mapCanvas().setCursor(seleccion_cursor)
         pass
 
     def h_seleccionar_ejes(self):
@@ -1341,7 +1364,7 @@ class EnerGis5(object):
         seleccion_px = QtGui.QPixmap(os.path.join(basepath,"icons", 'cur_seleccion_ejes.png'))
         seleccion_px.setMask(seleccion_px.mask())
         seleccion_cursor = QtGui.QCursor(seleccion_px)
-        self.mapCanvas.setCursor(seleccion_cursor)
+        self.iface.mapCanvas().setCursor(seleccion_cursor)
         pass
 
     def h_seleccion_aleatoria(self):
@@ -1351,7 +1374,7 @@ class EnerGis5(object):
         seleccion_px = QtGui.QPixmap(os.path.join(basepath,"icons", 'cur_seleccion_aleatoria.png'))
         seleccion_px.setMask(seleccion_px.mask())
         seleccion_cursor = QtGui.QCursor(seleccion_px)
-        self.mapCanvas.setCursor(seleccion_cursor)
+        self.iface.mapCanvas().setCursor(seleccion_cursor)
         pass
         
     def h_nodo(self):
@@ -1363,7 +1386,7 @@ class EnerGis5(object):
         punNodo = QtGui.QPixmap(os.path.join(basepath,"icons", 'cur_nodo.png'))
         punNodo.setMask(punNodo.mask())
         curNodo = QtGui.QCursor(punNodo)
-        self.mapCanvas.setCursor(curNodo)
+        self.iface.mapCanvas().setCursor(curNodo)
         pass
         
     def h_linea(self):
@@ -1375,7 +1398,7 @@ class EnerGis5(object):
         punLinea = QtGui.QPixmap(os.path.join(basepath,"icons", 'cur_linea.png'))
         punLinea.setMask(punLinea.mask())
         curLinea = QtGui.QCursor(punLinea)
-        self.mapCanvas.setCursor(curLinea)
+        self.iface.mapCanvas().setCursor(curLinea)
         pass
         
     def h_eje(self):
@@ -1385,7 +1408,7 @@ class EnerGis5(object):
         punEje = QtGui.QPixmap(os.path.join(basepath,"icons", 'cur_linea.png'))
         punEje.setMask(punEje.mask())
         curEje = QtGui.QCursor(punEje)
-        self.mapCanvas.setCursor(curEje)
+        self.iface.mapCanvas().setCursor(curEje)
         pass
 
     def h_agregar_vertice(self):
@@ -1395,7 +1418,7 @@ class EnerGis5(object):
         punNodo = QtGui.QPixmap(os.path.join(basepath,"icons", 'cur_nodo.png'))
         punNodo.setMask(punNodo.mask())
         curNodo = QtGui.QCursor(punNodo)
-        self.mapCanvas.setCursor(curNodo)
+        self.iface.mapCanvas().setCursor(curNodo)
         pass
 
     def h_quitar_vertice(self):
@@ -1405,7 +1428,7 @@ class EnerGis5(object):
         punNodo = QtGui.QPixmap(os.path.join(basepath,"icons", 'cur_nodo.png'))
         punNodo.setMask(punNodo.mask())
         curNodo = QtGui.QCursor(punNodo)
-        self.mapCanvas.setCursor(curNodo)
+        self.iface.mapCanvas().setCursor(curNodo)
         pass
 
     def h_poste(self):
@@ -1417,7 +1440,7 @@ class EnerGis5(object):
         punPoste = QtGui.QPixmap(os.path.join(basepath,"icons", 'cur_nodo.png'))
         punPoste.setMask(punPoste.mask())
         curPoste = QtGui.QCursor(punPoste)
-        self.mapCanvas.setCursor(curPoste)
+        self.iface.mapCanvas().setCursor(curPoste)
         pass
 
     def h_mover(self):
@@ -1427,7 +1450,7 @@ class EnerGis5(object):
         punMover = QtGui.QPixmap(os.path.join(basepath,"icons", 'cur_mover.png'))
         punMover.setMask(punMover.mask())
         curMover = QtGui.QCursor(punMover)
-        self.mapCanvas.setCursor(curMover)
+        self.iface.mapCanvas().setCursor(curMover)
         pass
 
     def h_rotar(self):
@@ -1437,7 +1460,7 @@ class EnerGis5(object):
         punRotar = QtGui.QPixmap(os.path.join(basepath,"icons", 'cur_rotar.png'))
         punRotar.setMask(punRotar.mask())
         curRotar = QtGui.QCursor(punRotar)
-        self.mapCanvas.setCursor(curRotar)
+        self.iface.mapCanvas().setCursor(curRotar)
         pass
 
     def h_mover_ejes(self):
@@ -1447,7 +1470,7 @@ class EnerGis5(object):
         punMover = QtGui.QPixmap(os.path.join(basepath,"icons", 'cur_mover.png'))
         punMover.setMask(punMover.mask())
         curMover = QtGui.QCursor(punMover)
-        self.mapCanvas.setCursor(curMover)
+        self.iface.mapCanvas().setCursor(curMover)
         pass
 
     def h_rotar_ejes(self):
@@ -1457,7 +1480,7 @@ class EnerGis5(object):
         punRotar = QtGui.QPixmap(os.path.join(basepath,"icons", 'cur_rotar.png'))
         punRotar.setMask(punRotar.mask())
         curRotar = QtGui.QCursor(punRotar)
-        self.mapCanvas.setCursor(curRotar)
+        self.iface.mapCanvas().setCursor(curRotar)
         pass
 
     def h_conectar(self):
@@ -1467,7 +1490,7 @@ class EnerGis5(object):
         punConectar = QtGui.QPixmap(os.path.join(basepath,"icons", 'cur_conectar.png'))
         punConectar.setMask(punConectar.mask())
         curConectar = QtGui.QCursor(punConectar)
-        self.mapCanvas.setCursor(curConectar)
+        self.iface.mapCanvas().setCursor(curConectar)
         pass
         
     def h_area(self):
@@ -1478,7 +1501,7 @@ class EnerGis5(object):
         punLinea = QtGui.QPixmap(os.path.join(basepath,"icons", 'cur_linea.png'))
         punLinea.setMask(punLinea.mask())
         curLinea = QtGui.QCursor(punLinea)
-        self.mapCanvas.setCursor(curLinea)
+        self.iface.mapCanvas().setCursor(curLinea)
         pass
 
     def h_parcela(self):
@@ -1489,7 +1512,7 @@ class EnerGis5(object):
         punLinea = QtGui.QPixmap(os.path.join(basepath,"icons", 'cur_linea.png'))
         punLinea.setMask(punLinea.mask())
         curLinea = QtGui.QCursor(punLinea)
-        self.mapCanvas.setCursor(curLinea)
+        self.iface.mapCanvas().setCursor(curLinea)
         pass
 
     def h_borrar(self):
@@ -1499,9 +1522,8 @@ class EnerGis5(object):
         ftrs_areas = []
         ftrs_parcelas = []
         capas = []
-        mapCanvas = self.iface.mapCanvas()
-        n = mapCanvas.layerCount()
-        layers = [mapCanvas.layer(i) for i in range(n)]
+        n = self.iface.mapCanvas().layerCount()
+        layers = [self.iface.mapCanvas().layer(i) for i in range(n)]
         str_nodos = '0'
         str_lineas = '0'
         str_postes = '0'
@@ -1564,7 +1586,7 @@ class EnerGis5(object):
                 reply = QMessageBox.question(None, 'EnerGis', 'Desea borrar los elementos seleccionados ?', QMessageBox.Yes, QMessageBox.No)
                 if reply == QMessageBox.No:
                     return
-                layers = [self.mapCanvas.layer(i) for i in range(n)]
+                layers = [self.iface.mapCanvas().layer(i) for i in range(n)]
                 for lyr in layers:
                     if lyr.name()[:6] == 'Lineas' and lyr.name()!='Lineas_Temp':
                         cursor = self.conn.cursor()
@@ -1624,7 +1646,7 @@ class EnerGis5(object):
                 if len(capas)==0:
                     return
 
-                layers = [self.mapCanvas.layer(i) for i in range(n)]
+                layers = [self.iface.mapCanvas().layer(i) for i in range(n)]
                 for lyr in layers:
                     if lyr.name()[:6] == 'Lineas' and lyr.name()!='Lineas_Temp':
                         for capa in capas:
@@ -1698,9 +1720,8 @@ class EnerGis5(object):
 
 
     def h_datos_eje(self):
-        mapCanvas = self.iface.mapCanvas()
-        n = mapCanvas.layerCount()
-        layers = [mapCanvas.layer(i) for i in range(n)]
+        n = self.iface.mapCanvas().layerCount()
+        layers = [self.iface.mapCanvas().layer(i) for i in range(n)]
         str_ejes = '0'
         for lyr in layers:
             if lyr.name() == 'Ejes de Calle':
@@ -1717,9 +1738,8 @@ class EnerGis5(object):
 
     def h_borrar_ejes(self):
         ftrs_ejes = []
-        mapCanvas = self.iface.mapCanvas()
-        n = mapCanvas.layerCount()
-        layers = [mapCanvas.layer(i) for i in range(n)]
+        n = self.iface.mapCanvas().layerCount()
+        layers = [self.iface.mapCanvas().layer(i) for i in range(n)]
         str_ejes = '0'
         for lyr in layers:
             if lyr.name() == 'Ejes de Calle':
@@ -1731,7 +1751,7 @@ class EnerGis5(object):
             reply = QMessageBox.question(None, 'EnerGis', 'Desea borrar los ejes seleccionados ?', QMessageBox.Yes, QMessageBox.No)
             if reply == QMessageBox.No:
                 return
-            layers = [self.mapCanvas.layer(i) for i in range(n)]
+            layers = [self.iface.mapCanvas().layer(i) for i in range(n)]
             for lyr in layers:
                 if lyr.name() == 'Ejes de Calle':
                     cursor = self.conn.cursor()
@@ -1745,33 +1765,33 @@ class EnerGis5(object):
         pass
 
     def h_zoomIn(self):
-        tool = herrZoom(self.iface, self.iface.mapCanvas(), 'ZoomIn')
+        tool = herrZoom(self.iface.mapCanvas(), 'ZoomIn')
         self.iface.mapCanvas().setMapTool(tool)
         #Cambio el cursor
         punZoom = QtGui.QPixmap(os.path.join(basepath,"icons", 'cur_zoom_in.png'))
         punZoom.setMask(punZoom.mask())
         curZoom = QtGui.QCursor(punZoom)
-        self.mapCanvas.setCursor(curZoom)
+        self.iface.mapCanvas().setCursor(curZoom)
         pass
 
     def h_zoomOut(self):
-        tool = herrZoom(self.iface, self.iface.mapCanvas(), 'ZoomOut')
+        tool = herrZoom(self.iface.mapCanvas(), 'ZoomOut')
         self.iface.mapCanvas().setMapTool(tool)
         #Cambio el cursor
         punZoom = QtGui.QPixmap(os.path.join(basepath,"icons", 'cur_zoom_out.png'))
         punZoom.setMask(punZoom.mask())
         curZoom = QtGui.QCursor(punZoom)
-        self.mapCanvas.setCursor(curZoom)
+        self.iface.mapCanvas().setCursor(curZoom)
         pass
         
     def h_Pan(self):
-        tool = herrZoom(self.iface, self.iface.mapCanvas(), 'Pan')
+        tool = herrZoom(self.iface.mapCanvas(), 'Pan')
         self.iface.mapCanvas().setMapTool(tool)
         #Cambio el cursor
         punZoom = QtGui.QPixmap(os.path.join(basepath,"icons", 'cur_pan.png'))
         punZoom.setMask(punZoom.mask())
         curZoom = QtGui.QCursor(punZoom)
-        self.mapCanvas.setCursor(curZoom)
+        self.iface.mapCanvas().setCursor(curZoom)
         pass
 
     def h_crear_proyecto(self):
@@ -1881,8 +1901,8 @@ class EnerGis5(object):
                     action.setEnabled(True)
 
             self.cmbProyecto.setEnabled(False)
-            n = self.mapCanvas.layerCount()
-            layers = [self.mapCanvas.layer(i) for i in range(n)]
+            n = self.iface.mapCanvas().layerCount()
+            layers = [self.iface.mapCanvas().layer(i) for i in range(n)]
             for lyr in layers:
                 if lyr.name() == 'Postes Proyectos':
                     lyr.setSubsetString('"Alimentador" = ' + "'" + self.proyecto + "'")
@@ -1904,8 +1924,8 @@ class EnerGis5(object):
                 if str(action.text())=='Borrar Proyecto':
                     action.setEnabled(False)
 
-            n = self.mapCanvas.layerCount()
-            layers = [self.mapCanvas.layer(i) for i in range(n)]
+            n = self.iface.mapCanvas().layerCount()
+            layers = [self.iface.mapCanvas().layer(i) for i in range(n)]
             for lyr in layers:
                 if lyr.name() == 'Nodos Proyectos' or lyr.name() == 'Lineas Proyectos' or lyr.name() == 'Postes Proyectos':
                     lyr.setSubsetString('"Alimentador" = ' + "'@@'")
