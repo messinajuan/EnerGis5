@@ -1,1 +1,3 @@
-Este es el repositorio de EnerGis. Software para gestión de redes eléctricas de distribución.
+EnerGis 5
+===================
+Armado de entorno para interactuar con una base de datos de EnerGis
